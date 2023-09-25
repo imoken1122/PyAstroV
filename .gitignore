@@ -1,8 +1,9 @@
 # self
-.png
+*png
 output/
 sampels/
 U3SM*
+*fits
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
