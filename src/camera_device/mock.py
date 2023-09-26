@@ -6,12 +6,12 @@ import numpy as np
 
 from camera_device.interface import CameraObject, CameraInfo, ControlCaps, ControlType, ImgType, ROIFormat
 def num_mock_camera():
-    return 1
+    return 2
 
     
 class MockCamera : 
-    def __init__(self) -> None:
-        self.idx=0
+    def __init__(self,idx) -> None:
+        self.idx=idx
         self.w = 1912 
         self.h = 1304
         self.is_capture = False
@@ -37,7 +37,8 @@ class MockCamera :
 
     def get(self,):
         a = np.random.randint(0,255,self.w*self.h).astype(np.uint8)
-        time.sleep(self.sleep_time)
+        for i in range(100000000):
+            pass
         return a
     def get_frame(self,):
         buf = self.get()

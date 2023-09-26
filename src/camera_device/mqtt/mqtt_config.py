@@ -10,25 +10,33 @@ PORT = 1883
 CLIENT_ID = "camera_device"
 
 
-def formatter(camera_idx, method, contents):
+def formatter(camera_idx, cmd, contents):
     msg = {
         "camera_idx" : camera_idx,
-        "method" : method,
+        "cmd" : cmd,
         "contents" : contents
     }
     return json.dumps(msg)
 
 class CameraTopics(Enum):
-    Roi = "camera/roi"
-    Control = "camera/ctrl"
-    Capture = "camera/capture"
-    Info = "camera/info"
-    Status = "camera/status"
-    Props = "camera/props"
+    Instr="camera/instr"
+    Responce="camera/responce"
 
-class Method(Enum):
-    Get = 0
-    Set = 1
+
+class CameraCmd(Enum):
+    GetInfo = "getinfo"
+    GetProps = "getprops"
+    GetStatus = "getstatus"
+    GetRoi = "getroi"
+    SetRoi = "setroi"
+    GetCtrlVal = "getctrlval"
+    SetCtrlVal = "setctrlval"
+    StartCapture = "startcap"
+    StopCapture = "stopcap"
+
+
+
+
 
 class MQTTBase(mqtt_client.Client,ABC):
     def __init__(self,):
@@ -43,13 +51,13 @@ class MQTTBase(mqtt_client.Client,ABC):
             print("Failed to connect, return code %d\n", rc)
 
 
-    def continue_sub(self,topic):
+    def start_subscribe(self,topic:str):
         self.subscribe(topic, 0)
-        self.loop_start()
+        #self.loop_forever()
         rc = 0
         return rc 
 
-    def pub_single(self, topic, msg):
+    def publish_single(self, topic, msg):
         
         mqtt_pub.single(topic, msg, hostname=BROKER)
         #res = self.publish(topic, msg, 0, False,)

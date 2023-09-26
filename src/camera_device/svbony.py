@@ -103,7 +103,7 @@ class SVBCamera(CameraObject) :
 
         self.is_capture = False
         self.camera.adjust_white_balance()
-        self.camera.set_ctl_value(int(SVBControlType.FlIP),3,0)
+        self.camera.set_ctl_value(int(SVBControlType.FLIP),3,0)
 
 
 
