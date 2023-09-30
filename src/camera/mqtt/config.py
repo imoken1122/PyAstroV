@@ -4,8 +4,6 @@ import paho.mqtt.publish as mqtt_pub
 import paho.mqtt.subscribe as mqtt_sub
 from abc import ABC, abstractmethod
 import json
-from queue import Queue
-#BROKER= 'broker.emqx.io'
 BROKER= 'localhost'
 PORT = 1883
 CLIENT_ID = "mqtt-camera-client"
