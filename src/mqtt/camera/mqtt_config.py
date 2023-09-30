@@ -57,7 +57,7 @@ class MQTTBase(mqtt_client.Client,ABC):
         return rc 
 
     def publish_single(self, topic, msg):
-        
+        print("publish to ",topic, msg) 
         mqtt_pub.single(topic, msg, hostname=BROKER)
         #res = self.publish(topic, msg, 0, False,)
     def on_log(mqttc, obj, level, string):
