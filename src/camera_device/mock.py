@@ -4,7 +4,7 @@ import threading
 import time 
 import numpy as np
 
-from camera_device.interface import CameraObject, CameraInfo, ControlCaps, ControlType, ImgType, ROIFormat
+from mqtt.camera_cli.interface import CameraObject, CameraInfo, ControlCaps, ControlType, ImgType, ROIFormat
 def num_mock_camera():
     return 2
 
@@ -49,9 +49,9 @@ class MockCamera :
         #return img
         _, img = cv2.imencode(".jpg", img)
         return img
-    def get_control_value(self,control_type : ControlType):
+    def get_control_value(self,ctrl_type : ControlType):
         return 0
-    def set_control_value(self,control_type : ControlType,value : int,is_auto : int):
+    def set_control_value(self,ctrl_type: ControlType,value : int,is_auto : int):
         self.sleep_time = value 
     def close(self):
         pass

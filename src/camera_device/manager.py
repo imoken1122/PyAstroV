@@ -3,7 +3,7 @@ from camera_device.mock import MockCamera, num_mock_camera
 from camera_device.svbony import SVBCamera,get_num_svb_camera
 import base64
 from dataclasses import asdict
-from interface import ControlType, ImgType, ROIFormat
+from mqtt.camera_cli.interface import ControlType, ImgType, ROIFormat
 class CameraManager : 
     frame_buffer = []
     conected_camera : list[str]=[]
@@ -36,7 +36,7 @@ class CameraManager :
 
     def get_info_i(self,idx : int) -> dict:
         info = self.devices[idx].get_info()
-        return asdict(info)
+        return info.to_dict()
 
     def get_roi_i(self,idx : int) -> dict:
         roi = self.devices[idx].roi

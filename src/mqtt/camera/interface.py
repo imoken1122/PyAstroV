@@ -48,6 +48,7 @@ class ROIFormat:
     width : int
     height : int
     bin : int
+    img_type : ImgType
 
 
 @dataclass

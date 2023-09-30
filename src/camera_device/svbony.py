@@ -1,4 +1,4 @@
-from camera_device.interface import CameraObject, CameraInfo, ControlCaps, ControlType, ImgType, ROIFormat
+from mqtt.camera_cli.interface import CameraObject, CameraInfo, ControlCaps, ControlType, ImgType, ROIFormat
 import asyncio 
 from pysvb import SVBControlType, PyDemosaic ,SVBImgType
 import pysvb as svb

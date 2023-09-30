@@ -8,7 +8,7 @@ from PIL import Image
 import time
 from flet import theme
 from camera_device.manager import CameraManager
-from  camera_device.interface import ControlType, ImgType
+from  mqtt.camera_cli.interface import ControlType, ImgType
 import ft_part
 import threading
 from queue import Queue

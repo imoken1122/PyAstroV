@@ -7,7 +7,7 @@ import time
 from PIL import Image
 import flet as ft
 from camera_manager import CameraManager
-from  camera_device.interface import ControlType, ImgType
+from  mqtt.camera_cli.interface import ControlType, ImgType
 
 def worker1(buf,buf_ready,is_capture):
     camera_manager = CameraManager()

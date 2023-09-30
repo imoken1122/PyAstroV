@@ -37,7 +37,7 @@ class MQTTCameraServer(MQTTBase):
                 #publish status
                 return
             case CameraCmd.GetRoi.value:
-                
+
                 res = self.camera_manger.get_roi_i(camera_idx)
 
             case CameraCmd.SetRoi.value:
@@ -49,6 +49,7 @@ class MQTTCameraServer(MQTTBase):
                 res  = self.camera_manger.get_ctrl_value_i(camera_idx)
 
             case CameraCmd.SetCtrlVal.value:
+                #　control type = exposure or gain の場合、露光中だったら start captureしなおす
                 self.camera_manger.set_ctrl_value_i(camera_idx,contents)
                 return
                 

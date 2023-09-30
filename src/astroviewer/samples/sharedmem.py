@@ -8,7 +8,7 @@ from PIL import Image
 import flet as ft
 from camera_manager import CameraManager
 from multiprocessing import Process, Manager
-from  camera_device.interface import ControlType, ImgType
+from  mqtt.camera_cli.interface import ControlType, ImgType
 
 def worker1(shm,camera_if,buf_ready,is_capture):
     camera_if.start_capture()

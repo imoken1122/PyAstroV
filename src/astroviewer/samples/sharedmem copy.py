@@ -8,7 +8,7 @@ from PIL import Image
 import flet as ft
 from camera_manager import CameraManager
 from multiprocessing import Process, Manager
-from  camera_device.interface import ControlType, ImgType
+from  mqtt.camera_cli.interface import ControlType, ImgType
 
 
 camera_manager = CameraManager()
