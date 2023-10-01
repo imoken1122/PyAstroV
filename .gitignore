@@ -5,6 +5,7 @@ sampels/
 U3SM*
 *fits
 /camera_device
+*.log
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

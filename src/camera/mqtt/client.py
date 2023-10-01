@@ -85,6 +85,9 @@ class MQTTCameraClient(MQTTBase):
             case CameraCmd.GetRoi.value:
                 self.store[camera_idx]["roi"] = data
         
+            case CameraCmd.SetRoi.value:
+                self.store[camera_idx]["roi"] = data
+
             case CameraCmd.GetCtrlVal.value:
                 ctrl_type = int(data["ctrl_type"])
                 self.store[camera_idx]["ctrlv"][ctrl_type] = int(data["value"])
@@ -92,20 +95,20 @@ class MQTTCameraClient(MQTTBase):
             case CameraCmd.StartCapture.value:
                 if data == {}: return 
                 self.store[camera_idx]["frame"].append(data["frame"])
-
                 return 
+            
             case CameraCmd.StopCapture.value:
-                print("StopCapture")
+                logger.info(f"camera_idx : {camera_idx} stop capture")
 
-            case CameraCmd.SetRoi.value:
-                self.store[camera_idx]["roi"] = data
 
             case CameraCmd.SetCtrlVal.value:
-                pass
+                ctrl_type = int(data["ctrl_type"])
+                self.store[camera_idx]["ctrlv"][ctrl_type] = int(data["value"])
+
             case CameraCmd.GetStatus.value:
-                print("GetStatus")
+                pass
             case _:
-                print("Invalid command")
+                logger.error("Invalid command")
                 
         self.wait_responces.remove(msg["transaction_id"])
 
@@ -120,8 +123,6 @@ class MQTTCameraClient(MQTTBase):
         await self.wait(transaction_id)
 
 
-import time
-import numpy as np
 async def test_mqttc():
 
     mqttc = MQTTCameraClient()
