@@ -3,33 +3,81 @@ import paho.mqtt.client as  mqtt_client
 import paho.mqtt.publish as mqtt_pub
 import paho.mqtt.subscribe as mqtt_sub
 import threading
-from camera.mqtt.config import MQTTBase, CameraTopics, formatter,CameraCmd
+from camera.mqtt.config import MQTTBase, CameraTopics,CameraCmd
 import base64
+import json
 import cv2
 from collections import deque
 import asyncio
-CAMERA_DATA_STORE= {"roi" : {},"info" : {},"ctrlv" : {},"frame" : deque([],maxlen = 10)}
+from camera.logger import setup_logger
+import hashlib
+import threading
+from datetime import datetime
+#get file name 
+logger = setup_logger("mqtt-client")
+
+
+CAMERA_DATA_STORE= {"roi" : {},"info" : {},"ctrlv" : {} ,"frame" : deque([],maxlen = 10)}
 
 class MQTTCameraClient(MQTTBase):
     def __init__(self):
         super().__init__()
         self.store = {}
+        self.num_camera  = 0
+        self.recieved_time = None
+
+    def formatter(self,transaction_id : str,camera_idx:int, cmd_idx:int, data:dict):
+        msg = {
+            # generate unique transaction id by hash and max length 100
+            "transaction_id" :transaction_id,
+            "camera_idx" : camera_idx,
+            "cmd_idx" : cmd_idx,
+            "data" : data
+        }
+        return json.dumps(msg)
+    async def init(self):
+        logger.info("MQTTCameraClient initializing...")
+
+        self.start_subscribe(CameraTopics.Responce.value)
+
+        self.loop_start() 
+        self.store = {}
+
+        await self.publish_instruction(-1, -1, {}, CameraTopics.Init.value)
+        await asyncio.sleep(1)
+        #while self.store == {}:
+        #    await asyncio.sleep(0.1)
+
+        for i in range(len(self.store.keys())):
+            await self.publish_instruction(i, CameraCmd.GetInfo.value, {}, )
+            await asyncio.sleep(0.1)
+            await self.publish_instruction(i, CameraCmd.GetRoi.value, {}, )
+        for i in range(len(self.store.keys())):
+            # logged connected camera info
+            logger.info(f"Camera {i} : {self.store[i]['info']}")
+
+        print(self.wait_responces)
+
+
 
     def on_message(self, mqttc, obj, msg):
-        asyncio.sleep(0.1)
-        print(f"Received `{len(msg.payload.decode())}` from `{msg.topic}` topic")
         msg = json.loads(msg.payload.decode())
-        data = json.loads(msg["data"])
-        camera_idx = msg["camera_idx"]
+        try:
+            data = json.loads(msg["data"])
+        except:
+            print(msg["data"])
+        camera_idx = int(msg["camera_idx"])
         cmd_idx = int(msg["cmd_idx"])
         #print(msg)
+        logger.info(f"CameraIdx : {camera_idx} ")
+        logger.info(f"CameraCmd : {CameraCmd(cmd_idx)} ")
 
         match cmd_idx:
             case CameraCmd.Init.value:
-                print("Init ")
                 num = int(data["num_device"])
                 for i in range(num):
-                    self.store[str(i)] = CAMERA_DATA_STORE.copy()
+                    self.store[i] = CAMERA_DATA_STORE.copy()
+                self.num_camera = num
 
             case CameraCmd.GetInfo.value:
                 self.store[camera_idx]["info"] = data
@@ -38,81 +86,76 @@ class MQTTCameraClient(MQTTBase):
                 self.store[camera_idx]["roi"] = data
         
             case CameraCmd.GetCtrlVal.value:
-                self.store[camera_idx]["ctrlv"] = data
+                ctrl_type = int(data["ctrl_type"])
+                self.store[camera_idx]["ctrlv"][ctrl_type] = int(data["value"])
         
             case CameraCmd.StartCapture.value:
+                if data == {}: return 
                 self.store[camera_idx]["frame"].append(data["frame"])
-   
+
+                return 
             case CameraCmd.StopCapture.value:
                 print("StopCapture")
-                return
 
             case CameraCmd.SetRoi.value:
-                return
+                self.store[camera_idx]["roi"] = data
+
             case CameraCmd.SetCtrlVal.value:
-                print("SetCtrlVal")
-                return
+                pass
             case CameraCmd.GetStatus.value:
                 print("GetStatus")
-                return
             case _:
                 print("Invalid command")
-                return
+                
+        self.wait_responces.remove(msg["transaction_id"])
 
-    def publish_instruction(self, camera_idx, cmd_idx, data):
-        json_msg = formatter(camera_idx, cmd_idx, data)
-        self.publish_single(CameraTopics.Instr.value, json_msg)
-        #print("store : " ,mqttc.store)
+    async def publish_instruction(self, camera_idx:int, cmd_idx:int, data:dict,topic : str = CameraTopics.Instr.value):
+        transaction_id = hashlib.sha256(str(datetime.now()).encode()).hexdigest()[:100]
+        json_msg = self.formatter(transaction_id,camera_idx, cmd_idx, data)
+        await self.publish_single(transaction_id,topic, json_msg)
+
+        # if CmaeraCmd.StartCapture.value then not wait responce
+        if cmd_idx == CameraCmd.StartCapture.value: return
+        self.wait_responces.add(transaction_id)
+        await self.wait(transaction_id)
+
 
 import time
 import numpy as np
+async def test_mqttc():
 
-mqttc = MQTTCameraClient()
+    mqttc = MQTTCameraClient()
 
-mqttc.start_subscribe(CameraTopics.Responce.value)
+    await mqttc.init()    
 
-mqttc.loop_start()  
-b = False
-idx= 0
-msg = {"camera_idx":-1,
-                    "cmd_idx" : -1,
-                    "data" : {}}
-s = time.time()
-while  mqttc.store == {}:
-    time.sleep(0.1)
-    mqttc.publish_single( CameraTopics.Init.value, json.dumps(msg))
-e = time.time()
-print(e-s)
+    while True:
+        cmd = input( "cmd : ")
+        match cmd :
+            case 'q': break
+            case 'init':
+                data={}
+                await mqttc.publish_instruction(-1, CameraCmd.Init.value, data, CameraTopics.Init.value)
+            case'sc':
+                data={"ctrl_type":"1","value":"4000000","is_auto":"0"}
+                await mqttc.publish_instruction(1, CameraCmd.SetCtrlVal.value, data)
+            case 'gc':
+                data={"ctrl_type":"1"}
+                await mqttc.publish_instruction(1, CameraCmd.GetCtrlVal.value, data)
+            case 'si':
+                data={}
+                await mqttc.publish_instruction(1, CameraCmd.GetInfo.value, data)
+            case 'sr':
+                data={"startx":"0","starty":"0","width":"1912","height":"1304","bin":"1","img_type":"0"}
+                await mqttc.publish_instruction(1, CameraCmd.SetRoi.value, data)
+            case 'gf':
+                data={}
+                await mqttc.publish_instruction(1, CameraCmd.StartCapture.value, data)
+            case 'sf':
+                data={}
+                await mqttc.publish_instruction(1, CameraCmd.StopCapture.value, data)
 
-
-msg = {"camera_idx":0,
-                    "cmd_idx" : CameraCmd.SetCtrlVal.value,
-                    "data" : {"ctrl_type":"1","value":"4000000","is_auto":"0"}}
-mqttc.publish_single( CameraTopics.Instr.value, json.dumps(msg))
-
-time.sleep(0.1)
-msg = {"camera_idx":1,
-                    "cmd_idx" : CameraCmd.StartCapture.value,
-                    "data" : {}}
-
-mqttc.publish_single( CameraTopics.Instr.value, json.dumps(msg))
-time.sleep(3)
-msg = {"camera_idx":0,
-                    "cmd_idx" : CameraCmd.SetRoi.value,
-                    "data" : {"startx":"0","starty":"0","width":"640","height":"480","bin":"1","img_type": "0"}}
-mqttc.publish_single( CameraTopics.Instr.value, json.dumps(msg))
-
-msg = {"camera_idx":0,
-                    "cmd_idx" : CameraCmd.GetRoi.value,
-                    "data" : {}}
-mqttc.publish_single( CameraTopics.Instr.value, json.dumps(msg))
-time.sleep(4)
-msg = {"camera_idx":1,
-                "cmd_idx" : CameraCmd.StopCapture.value,
-                    "data" : {}}
-mqttc.publish_single( CameraTopics.Instr.value, json.dumps(msg))
-
-print("=====================================")
-print(mqttc.store)
-while 1:
-    time.sleep(1)
+        await asyncio.sleep(0.1)
+        logger.info(mqttc.store[1])
+if __name__ == "__main__":
+    asyncio.run(test_mqttc())
+    #

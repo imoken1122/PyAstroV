@@ -10,6 +10,7 @@
 annotated-types==0.5.0
 anyio==3.7.1
 astropy==5.3.3
+blinker==1.6.2
 certifi==2023.7.22
 charset-normalizer==3.2.0
 click==8.1.7
@@ -18,6 +19,7 @@ copier==8.3.0
 decorator==5.1.1
 dunamai==1.18.0
 fastapi==0.103.1
+flask==3.0.0
 flet==0.10.1
 flet-core==0.10.1
 flet-runtime==0.10.1
@@ -27,6 +29,7 @@ httpcore==0.17.3
 httpx==0.24.1
 idna==3.4
 iniconfig==2.0.0
+itsdangerous==2.1.2
 jinja2==3.1.2
 jinja2-ansible-filters==1.3.2
 markupsafe==2.1.3
@@ -47,6 +50,9 @@ pygments==2.16.1
 pypng==0.20220715.0
 pysvb==0.2.0
 pytest==7.4.2
+python-dateutil==2.8.2
+pytx==0.5.10
+pytz==2023.3.post1
 pyyaml==6.0.1
 pyyaml-include==1.3.1
 qrcode==7.4.2
@@ -63,3 +69,4 @@ watchdog==3.0.0
 wcwidth==0.2.6
 websocket-client==1.6.3
 websockets==11.0.3
+werkzeug==3.0.0

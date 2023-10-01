@@ -5,7 +5,7 @@ import json
 import base64
 import threading
 from mqtt_config import MQTTBase, CameraCmd, formatter,CameraTopics
-from camera_device.manager import CameraManager
+from camera.manager import CameraManager
 
 '''
 msg = {
