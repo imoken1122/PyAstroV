@@ -23,7 +23,8 @@ class MQTTCameraAPI(CameraAPI) :
         num = self.get_num_camera()
         self.is_captures = [False for i in range(num)]
         
-
+    def is_capture_i(self,idx) -> bool:
+        return self.is_captures[idx]
     def get_num_camera(self):
         return self.mqttc.num_camera
 
@@ -73,22 +74,20 @@ class MQTTCameraAPI(CameraAPI) :
             return None
         await self.mqttc.publish_instruction(idx, CameraCmd.StartCapture.value, {})
 
-    async def get_frame_i(self,idx : int):
+    def get_frame_i(self,idx : int):
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
-            yield None
+            return None
             
         self.is_captures[idx] = True
 
-        while self.is_captures[idx]:
-            self.lock.acquire()
-            try:
-                buf = self.mqttc.store[idx]["frames"].leftpop()
-            except:
-                buf = None
-            self.lock.release()
-            await asyncio.sleep(0.5)
-            yield buf
+        self.lock.acquire()
+        try:
+            buf = self.mqttc.store[idx]["frames"].leftpop()
+        except:
+            buf = None
+        self.lock.release()
+        return buf
 
 
     async def stop_capture_i(self,idx : int):

@@ -8,7 +8,7 @@ import time
 from flet import theme
 import threading
 from queue import Queue
-from core import AstroVCore
+from pyastrov.core import AstroVCore
 from control_panel.base import ControlPanel 
 from view_panel.base import CameraViewPanel 
 from pyastrov.core import AstroVCore
@@ -92,7 +92,7 @@ def main(page: ft.Page):
     page.window_min_height=200
     page.window_resizable = True
     page.title = "Camera App"
-
+    app = App(AstroVCore())
     page.update()
 
 ft.app(target = main)

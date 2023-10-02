@@ -68,29 +68,32 @@ class CameraAPI(metaclass=ABCMeta):
     def get_num_camera(self) -> int:
         pass
     @abstractmethod
-    def get_info_i(self,idx : int) -> CameraInfo:
-        pass
-    @abstractmethod
     def init(self):
         pass
     @abstractmethod
-    def start_capture_i(self):
+    def is_capture_i(self,idx) -> bool:
         pass
     @abstractmethod
-    def stop_capture_i(self):
+    def get_info_i(self,idx : int) -> CameraInfo:
         pass
     @abstractmethod
-    def get_roi_i(self) -> ROIFormat:
+    def start_capture_i(self,idx):
         pass
     @abstractmethod
-    def set_roi_i(self,startx : int,starty : int,width : int,height : int,bin : int,img_type : ImgType):
+    def stop_capture_i(self,idx):
         pass
     @abstractmethod
-    def get_ctrl_value_i(self,control_type : ControlType):
+    def get_roi_i(self,idx) -> ROIFormat:
         pass
     @abstractmethod
-    def set_ctrl_value_i(self,control_type : ControlType,value : int,is_auto : int):
+    def set_roi_i(self,idx,startx : int,starty : int,width : int,height : int,bin : int,img_type : ImgType):
         pass
     @abstractmethod
-    def get_frame_i(self):
+    def get_ctrl_value_i(self,idx,control_type : ControlType):
+        pass
+    @abstractmethod
+    def set_ctrl_value_i(self,idx,control_type : ControlType,value : int,is_auto : int):
+        pass
+    @abstractmethod
+    def get_frame_i(self,idx):
         pass

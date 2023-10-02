@@ -90,21 +90,21 @@ class CameraSettingPanel(ft.UserControl):
                         ],
                     ),
             )
-    def capture_clicked(self,e):
+    async def capture_clicked(self,e):
         ## IconButton state "e" 
         e.control.selected = not e.control.selected
-        e.control.update()
-
+        e.control.update_async()
+        idx=0
         # capture start
         if e.control.selected:
-            self.core.camera_api.set_roi(0,0,self.cur_width,self.cur_height,self.cur_bin,self.cur_img_type)
-            roi = self.core.camera_api.get_roi()
+            await self.core.camera_api.set_roi_i(idx,0,0,self.cur_width,self.cur_height,self.cur_bin,self.cur_img_type)
+            roi = self.core.camera_api.get_roi_i(idx)
             print(roi.width,roi.height,roi.bin)
-            self.camera_view_panel.open(e)
+            await self.camera_view_panel.open(e)
 
         else:
-            self.camera_view_panel.close(e)
-        self.update() 
+            await self.camera_view_panel.close(e)
+        await self.update_async() 
 
 
 

@@ -125,13 +125,14 @@ class CameraControlPanel(ft.UserControl):
         )
     
     def save_clicked(self,e):
-        if not self.core.camera_api.is_capture: return
-
+        idx=0
+        if not self.core.camera_api.is_captures[idx]: return
+        utils.save_img(self.core.camera_api.get_frame(idx))
 
         print("save image")
 
     def adjust_white_balance_clicked(self,e):
-        self.core.camera_api.adjust_white_balance()
+        #self.core.camera_api.adjust_white_balance()
         print("adjust white balance")
 
     def slider_changed(self,e):
@@ -145,12 +146,13 @@ class CameraControlPanel(ft.UserControl):
 
         ## set gain to camera interface
         self.update()
-    def ctrl_value_changed(self,e):
+    async def ctrl_value_changed(self,e):
+        idx = 0
         if e.control.data == "gain":
-            self.core.camera_api.set_ctrl_value(ControlType.GAIN,int(e.control.value),0)
+            await self.core.camera_api.set_ctrl_value_i( idx,ControlType.GAIN,int(e.control.value),0)
         elif e.control.data == "exposure":
             micro_sec = int(e.control.value * 1000000)
-            self.core.camera_api.set_ctrl_value(ControlType.EXPOSURE,micro_sec,0)
+            await self.core.camera_api.set_ctrl_value_i(idx,ControlType.EXPOSURE,micro_sec,0)
         elif e.control.data == "contrast":
-            self.core.camera_api.set_ctrl_value(ControlType.CONTRAST,int(e.control.value),0)
-        self.update()
+            await self.core.camera_api.set_ctrl_value_i(idx,ControlType.CONTRAST,int(e.control.value),0)
+        await self.update_async()
