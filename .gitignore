@@ -1,7 +1,7 @@
 # self
 *png
-output/
-sampels/
+/output
+/sampels
 U3SM*
 *fits
 /camera_device

@@ -83,7 +83,7 @@ class CameraAPI(metaclass=ABCMeta):
     def get_roi_i(self) -> ROIFormat:
         pass
     @abstractmethod
-    def set_roi_i(self,bin : int):
+    def set_roi_i(self,startx : int,starty : int,width : int,height : int,bin : int,img_type : ImgType):
         pass
     @abstractmethod
     def get_ctrl_value_i(self,control_type : ControlType):

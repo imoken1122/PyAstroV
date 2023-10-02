@@ -87,7 +87,7 @@ class MQTTCameraAPI(CameraAPI) :
             except:
                 buf = None
             self.lock.release()
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.5)
             yield buf
 
 
