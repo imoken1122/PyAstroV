@@ -4,7 +4,7 @@ import paho.mqtt.client as  mqtt_client
 import paho.mqtt.publish as mqtt_pub
 import paho.mqtt.subscribe as mqtt_sub
 from abc import ABC, abstractmethod
-from ..logger import setup_logger
+from ...logger import setup_logger
 import threading
 
 logger = setup_logger("mqtt-client")

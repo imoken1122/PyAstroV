@@ -3,13 +3,13 @@ import paho.mqtt.client as  mqtt_client
 import paho.mqtt.publish as mqtt_pub
 import paho.mqtt.subscribe as mqtt_sub
 import threading
-from camera.mqtt.config import MQTTBase, CameraTopics,CameraCmd
+from .config import MQTTBase, CameraTopics,CameraCmd
 import base64
 import json
 import cv2
 from collections import deque
 import asyncio
-from camera.logger import setup_logger
+from pyastrov.logger import setup_logger
 import hashlib
 import threading
 from datetime import datetime

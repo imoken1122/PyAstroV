@@ -1,3 +1,5 @@
+
+
 import flet as ft
 import numpy as np
 import base64
@@ -11,7 +13,8 @@ from queue import Queue
 from pyastrov.core import AstroVCore
 from control_panel.base import ControlPanel 
 from view_panel.base import CameraViewPanel 
-from pyastrov.core import AstroVCore
+import asyncio
+
 WINDOW_WIDTH = 1980
 WINDOW_HEIHG= 1080
 
@@ -82,9 +85,9 @@ class App(ft.UserControl):
         )
 
 
+from pyastrov.camera.mqtt.api import MQTTCameraAPI
 
-
-def main(page: ft.Page):
+async  def main(page: ft.Page):
 
     page.window_max_width=WINDOW_WIDTH
     page.window_max_height=WINDOW_HEIHG
@@ -92,7 +95,15 @@ def main(page: ft.Page):
     page.window_min_height=200
     page.window_resizable = True
     page.title = "Camera App"
-    app = App(AstroVCore())
-    page.update()
+    await page.update_async()
 
-ft.app(target = main)
+    camera_api = MQTTCameraAPI()
+    await camera_api.init()
+    astrov_core = AstroVCore(camera_api)
+    app = App(astrov_core)
+    page.add(app)
+    await page.update_async()
+
+
+if __name__ == "__main__":
+    ft.app(target = main)

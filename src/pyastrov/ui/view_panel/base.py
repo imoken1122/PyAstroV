@@ -15,7 +15,7 @@ class CameraViewPanel(ft.UserControl):
         self.width = width
         self.height = height
 
-        self.init_img = open("base64.txt","r",encoding="ascii" ).read()[:-1]
+        self.init_img = open("/Users/momo/Desktop/AstroViewer/src/pyastrov/ui/view_panel/base64.txt","r",encoding="ascii" ).read()[:-1]
 
     def build(self,) :
         self.img_view= ft.Image(

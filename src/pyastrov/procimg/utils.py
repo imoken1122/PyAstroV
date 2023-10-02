@@ -2,7 +2,7 @@ import base64
 import cv2
 import numpy as np
 import datetime
-from camera.interface import ControlType, ImgType, ROIFormat ;
+from pyastrov.camera.interface import ControlType, ImgType, ROIFormat ;
 
 def to_ndarray(buf: list[int], img_type : ImgType):
     bit_t = np.uint8

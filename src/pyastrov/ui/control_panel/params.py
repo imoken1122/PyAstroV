@@ -2,7 +2,7 @@ import flet as ft
 from view_panel.base  import CameraViewPanel
 import ft_part
 from pyastrov.core import AstroVCore
-from camera.interface import ControlType
+from pyastrov.camera.interface import ControlType
 from pyastrov.procimg import utils
 
 class CameraControlPanel(ft.UserControl):

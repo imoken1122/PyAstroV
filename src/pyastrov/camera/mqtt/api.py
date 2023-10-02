@@ -1,11 +1,11 @@
 
 import base64
 from dataclasses import asdict
-from camera.interface import CameraAPI, ControlType, ImgType, ROIFormat
-from camera.mqtt.client import MQTTCameraClient
-from camera.mqtt.config import CameraCmd, CameraTopics
+from ..interface import CameraAPI, ControlType, ImgType, ROIFormat
+from .client import MQTTCameraClient
+from .config import CameraCmd, CameraTopics
 import asyncio
-from camera.logger import setup_logger
+from pyastrov.logger import setup_logger
 import threading 
 
 logger = setup_logger("mqtt-client-api")
