@@ -7,6 +7,15 @@ class ImgType(Enum):
     RAW8 =0,
     RAW16 =1,
     RGB24 =2 
+    @staticmethod
+    def from_int(img_type : int ) :
+        match img_type:
+            case 0: return ImgType.RAW8
+            case 1: return ImgType.RAW16
+            case 2: return ImgType.RGB24
+            case _: return None
+
+        
 class ControlType(Enum):
     GAIN = 0
     EXPOSURE = 1

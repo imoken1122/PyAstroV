@@ -101,7 +101,7 @@ async  def main(page: ft.Page):
     await camera_api.init()
     astrov_core = AstroVCore(camera_api)
     app = App(astrov_core)
-    page.add(app)
+    await page.add_async(app)
     await page.update_async()
 
 

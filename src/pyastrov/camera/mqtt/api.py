@@ -17,6 +17,8 @@ class MQTTCameraAPI(CameraAPI) :
         self.is_captures = []
         self.mqttc = MQTTCameraClient() 
         self.lock = threading.Lock()
+        self.roi : ROIFormat = None
+        self.info = None
 
     async def init(self):
         await self.mqttc.init()
@@ -32,6 +34,7 @@ class MQTTCameraAPI(CameraAPI) :
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
+        logger.debug(self.mqttc.store[idx]["info"])
         return self.mqttc.store[idx]["info"]
 
     def get_roi_i(self,idx : int) -> dict:
@@ -40,17 +43,21 @@ class MQTTCameraAPI(CameraAPI) :
             return None
         return self.mqttc.store[idx]["roi"]
 
-    async def set_roi_i(self,idx : int,  data : dict):
+    async def set_roi_i(self,idx : int,  startx : int, starty : int, width : int, height : int, bin : int, img_type : ImgType):
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
+        img_t = img_type.value[0]
+        self.roi = ROIFormat(startx,starty,width,height,bin,img_type)
+        data = { "startx" : str(startx), "starty" : str(starty), "width" : str(width), "height" : str(height), "bin" : str(bin), "img_type" : str(img_t)}
         await self.mqttc.publish_instruction(idx, CameraCmd.SetRoi.value, data)
 
-    async def get_ctrl_value_i(self,idx : int, data:dict) -> dict:
+    async def get_ctrl_value_i(self,idx : int, ctrl_type :  ControlType   ) -> dict:
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
 
+        data = { "ctrl_type" : str(ctrl_type.value)}
         ctrl_type = int(data["ctrl_type"])
 
 
@@ -62,16 +69,18 @@ class MQTTCameraAPI(CameraAPI) :
         return self.mqttc.store[idx]["ctrlv"][ctrl_type]
 
 
-    async def set_ctrl_value_i(self,idx : int, data):
+    async def set_ctrl_value_i(self,idx : int, ctrl_type :  ControlType, value : int  , is_auto : int ) -> dict:
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
+        data = { "ctrl_type" : str(ctrl_type.value), "value" : str(value), "is_auto" : str(is_auto)}    
         await self.mqttc.publish_instruction(idx, CameraCmd.SetCtrlVal.value, data)
 
     async def start_capture_i(self,idx : int):
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
+        self.is_captures[idx] = True
         await self.mqttc.publish_instruction(idx, CameraCmd.StartCapture.value, {})
 
     def get_frame_i(self,idx : int):
@@ -83,8 +92,8 @@ class MQTTCameraAPI(CameraAPI) :
 
         self.lock.acquire()
         try:
-            buf = self.mqttc.store[idx]["frames"].leftpop()
-        except:
+            buf = self.mqttc.store[idx]["frames"].pop()
+        except Exception as e   :
             buf = None
         self.lock.release()
         return buf

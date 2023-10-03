@@ -3,7 +3,7 @@ import flet as ft
 from pyastrov.core import AstroVCore
 import asyncio
 from pyastrov.procimg import utils
-
+import time
 class CameraViewPanel(ft.UserControl):
 
 
@@ -28,14 +28,19 @@ class CameraViewPanel(ft.UserControl):
 
     async def open(self,e):
         idx= 0
-        self.core.camera_api.start_capture_i(idx)
-
+        await self.core.camera_api.start_capture_i(idx)
+        print(self.core.camera_api.is_capture_i(idx))
+        img_w,img_h = self.core.camera_api.roi.width,self.core.camera_api.roi.height
         while self.core.camera_api.is_capture_i(idx):
-        
-            buf = self.core.camera_api.get_frame_i(idx)
-            if buf:
-                self.img_view.src_base64 = utils.to_flet_img(buf)
+            
+            s= time.time()
+            encoded_frame= self.core.camera_api.get_frame_i(idx)
+            if encoded_frame:
+                buf= utils.base64_to_bytes(encoded_frame)
+                self.img_view.src_base64 = utils.get_img_for_flet(buf,img_w,img_h)  
                 await self.update_async()
+                e= time.time()
+                print(e-s)
 
             await asyncio.sleep(0.1)
             
@@ -45,6 +50,6 @@ class CameraViewPanel(ft.UserControl):
         
     async def close(self,e):
         idx=0
-        self.core.camera_api.stop_capture_i(idx)
+        await self.core.camera_api.stop_capture_i(idx)
         await self.update_async()
 

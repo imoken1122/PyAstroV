@@ -15,16 +15,16 @@ def to_ndarray(buf: list[int], img_type : ImgType):
             raise Exception("Invalid Image Type")
     return np.frombuffer(buf,dtype=bit_t)
 
-def buf_to_img( buf : list, width : int , height : int):
-    arr = to_ndarray(buf).reshape(height,width)
+def buf_to_img( buf : list, width : int , height : int,img_type : ImgType = ImgType.RAW8):
+    arr = to_ndarray(buf,img_type).reshape(height,width)
     img = debayer(arr)
     return img
-def to_flet_img( buf : list ) -> str : 
-    img = buf_to_img(buf)
+def get_img_for_flet( buf : list ,width : int , height : int,img_type:ImgType = ImgType.RAW8) -> str : 
+    img = buf_to_img(buf, width, height)
     _, encoded = cv2.imencode(".png", img)
     return bytes_to_base64(encoded)
 
-def save_image( path : str, array : np.array):
+def save_img( path : str, array : np.array):
     ''' input image array must be BGR '''
 
     frame = cv2.imdecode(array,cv2.IMREAD_UNCHANGED)

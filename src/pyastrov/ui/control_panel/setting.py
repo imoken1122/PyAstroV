@@ -11,20 +11,20 @@ class CameraSettingPanel(ft.UserControl):
         self.core = core
 
         self.camera_view_panel = camera_view_panel
-
+        idx = 0
         ## 本当はここで定義するものではなくて、有効なカメラから取得する
-        info = self.core.camera_api.info
-        self.max_width=info.max_width
-        self.max_height=info.max_height 
-        self.able_bins = [f"{b}×{b}" for b in info.supported_bins if b!=0]
-        self.able_img_types = info.supported_img_type
+        info = self.core.camera_api.get_info_i(idx)
+        self.max_width= info["max_width"]
+        self.max_height=info["max_height"]
+        self.able_bins = [f"{b}×{b}" for b in info["supported_bins"] if b!=0]
+        self.able_img_types = info["supported_img_type"]
 
         # current setting
-        roi = self.core.camera_api.roi
-        self.cur_width = roi.width
-        self.cur_height = roi.height
-        self.cur_bin = roi.bin
-        self.cur_img_type = self.core.camera_api.img_type
+        roi = self.core.camera_api.get_roi_i(idx)
+        self.cur_width = roi["width"]
+        self.cur_height = roi["height"]
+        self.cur_bin = roi["bin"]
+        self.cur_img_type = ImgType.from_int(int(roi["img_type"]))
 
     def build(self):
         return ft.Container(
@@ -93,13 +93,14 @@ class CameraSettingPanel(ft.UserControl):
     async def capture_clicked(self,e):
         ## IconButton state "e" 
         e.control.selected = not e.control.selected
-        e.control.update_async()
+        await e.control.update_async()
         idx=0
         # capture start
         if e.control.selected:
+            
             await self.core.camera_api.set_roi_i(idx,0,0,self.cur_width,self.cur_height,self.cur_bin,self.cur_img_type)
             roi = self.core.camera_api.get_roi_i(idx)
-            print(roi.width,roi.height,roi.bin)
+            print(roi)
             await self.camera_view_panel.open(e)
 
         else:
@@ -108,7 +109,7 @@ class CameraSettingPanel(ft.UserControl):
 
 
 
-    def roi_value_changed(self,e):
+    async def roi_value_changed(self,e):
         match e.control.key:
             case "resolution":
                 selected_width,selected_height = e.control.value.split("x")
@@ -123,4 +124,4 @@ class CameraSettingPanel(ft.UserControl):
                 selected_bin = e.control.value.split("x")[0]
                 self.cur_bin = int(selected_bin)
 
-        self.update()
+        await self.update_async()

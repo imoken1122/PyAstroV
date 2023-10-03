@@ -135,7 +135,7 @@ class CameraControlPanel(ft.UserControl):
         #self.core.camera_api.adjust_white_balance()
         print("adjust white balance")
 
-    def slider_changed(self,e):
+    async def slider_changed(self,e):
         if e.control.data == "gain":
             self.gain_text.value = int(e.control.value) 
         elif e.control.data == "exposure":
@@ -145,7 +145,7 @@ class CameraControlPanel(ft.UserControl):
 
 
         ## set gain to camera interface
-        self.update()
+        await self.update_async()
     async def ctrl_value_changed(self,e):
         idx = 0
         if e.control.data == "gain":
