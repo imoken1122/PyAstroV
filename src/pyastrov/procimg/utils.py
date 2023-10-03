@@ -24,12 +24,12 @@ def get_img_for_flet( buf : list ,width : int , height : int,img_type:ImgType = 
     _, encoded = cv2.imencode(".png", img)
     return bytes_to_base64(encoded)
 
-def save_img( path : str, array : np.array):
+def save_img(  array : np.array):
     ''' input image array must be BGR '''
 
     frame = cv2.imdecode(array,cv2.IMREAD_UNCHANGED)
     now = datetime.now()
-    cv2.imwrite(f"{now.strftime('%Y%m%d_%H%M%S')}.png",frame)
+    cv2.imwrite(f"./output/{now.strftime('%Y%m%d_%H%M%S')}.tiff",frame)
 def bytes_to_base64(buf:bytes):
     return base64.b64encode(buf).decode('ascii')
 

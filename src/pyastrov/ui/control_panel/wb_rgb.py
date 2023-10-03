@@ -21,7 +21,7 @@ class CameraWBPanel(ft.UserControl):
     def build(self,):
         return ft.Container(
                 width=500,
-                height=500,
+                height=300,
                 padding=20,
                 bgcolor=ft.colors.BLUE_GREY_900,
                 border_radius=5,

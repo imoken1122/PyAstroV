@@ -12,14 +12,14 @@ class CameraSettingPanel(ft.UserControl):
 
         self.camera_view_panel = camera_view_panel
         idx = 0
-        ## 本当はここで定義するものではなくて、有効なカメラから取得する
+
         info = self.core.camera_api.get_info_i(idx)
         self.max_width= info["max_width"]
         self.max_height=info["max_height"]
         self.able_bins = [f"{b}×{b}" for b in info["supported_bins"] if b!=0]
         self.able_img_types = info["supported_img_type"]
 
-        # current setting
+        # current ROI setting
         roi = self.core.camera_api.get_roi_i(idx)
         self.cur_width = roi["width"]
         self.cur_height = roi["height"]

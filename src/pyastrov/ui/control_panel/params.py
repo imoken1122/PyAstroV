@@ -10,17 +10,18 @@ class CameraControlPanel(ft.UserControl):
     def __init__(self,core :AstroVCore ):
         super().__init__()
         self.core = core
-        self.gain_slider= ft_part.TextWithSlider("Gain",14,1,550,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data="gain")
+        self.gain_slider= ft_part.TextWithSlider("Gain",1,1,550,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data=ControlType.GAIN)
 
-        self.exp_slider= ft_part.TextWithSlider("Expo",100000,1,60,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data="exposure")
+        self.exp_slider= ft_part.TextWithSlider("Exp",1,1,60,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data=ControlType.EXPOSURE)
 
-        self.contrast_slider= ft_part.TextWithSlider("Contrust",50,1,100,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data="contrast")
+        self.contrast_slider= ft_part.TextWithSlider("Contrust",50,1,100,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data=ControlType.CONTRAST)
 
-      
+        self.satulate_slider = ft_part.TextWithSlider("Satulate",50,1,100,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data=ControlType.SATURATION)
+        self.gamma_slider = ft_part.TextWithSlider("Gamma",50,1,1000,self.slider_changed,self.ctrl_value_changed,ft.colors.AMBER_800,data=ControlType.GAMMA)
     def build(self,):
         return ft.Container(
                 width=500,
-                height=600,
+                height=400,
                 padding=20,
                 bgcolor=ft.colors.BLUE_GREY_900,
                 border_radius=5,
@@ -43,6 +44,11 @@ class CameraControlPanel(ft.UserControl):
                                 self.exp_slider.build(),
                                 #ft_part.Text("Contrast",alignment=ft.alignment.bottom_left),
                                 self.contrast_slider.build(),
+                                #ft_part.Text("Satulate",alignment=ft.alignment.bottom_left),
+                                self.satulate_slider.build(),
+                                #ft_part.Text("Gamma",alignment=ft.alignment.bottom_left),
+                                self.gamma_slider.build(),
+
 
                                     ]
                                  ),
@@ -72,24 +78,29 @@ class CameraControlPanel(ft.UserControl):
 
         print("save image")
     async def slider_changed(self,e):
-        if e.control.data == "gain":
-            self.gain_slider.text.value= int(e.control.value) 
-        elif e.control.data == "exposure":
-            self.exp_slider.text.value= int(e.control.value)
-        elif e.control.data == "contrast":
-            self.contrast_slider.text.value= int(e.control.value)
+       
+        match e.control.data : 
+            case ControlType.GAIN:
+                self.gain_slider.text.value= int(e.control.value) 
+            case ControlType.EXPOSURE:
+                self.exp_slider.text.value= int(e.control.value)
+            case ControlType.CONTRAST:
+                self.contrast_slider.text.value= int(e.control.value)
+            case ControlType.SATURATION:
+                self.satulate_slider.text.value= int(e.control.value)
+            case ControlType.GAMMA:
+                self.gamma_slider.text.value= int(e.control.value)
 
-
-        await self.ctrl_value_changed(e)
+        #await self.ctrl_value_changed(e)
         await self.update_async()
 
 
     async def ctrl_value_changed(self,e):
-        if e.control.data == "gain":
-            await self.core.camera_api.set_ctrl_value_i( idx,ControlType.GAIN,int(e.control.value),0)
-        elif e.control.data == "exposure":
-            micro_sec = int(e.control.value * 1000000)
-            await self.core.camera_api.set_ctrl_value_i(idx,ControlType.EXPOSURE,micro_sec,0)
-        elif e.control.data == "contrast":
-            await self.core.camera_api.set_ctrl_value_i(idx,ControlType.CONTRAST,int(e.control.value),0)
+        if e.control.data == ControlType.EXPOSURE:
+            value = int(e.control.value * 1000000)
+        else:
+            value = int(e.control.value)
+
+
+        await self.core.camera_api.set_ctrl_value_i(idx,e.control.data,value,0)
         await self.update_async()

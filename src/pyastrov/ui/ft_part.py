@@ -34,8 +34,9 @@ class TextWithSlider :
         self.text= ft.TextField(
                                 label=label,
                                 value =default_value ,
-                                label_style={"size" : 13},
+                                label_style={"size" : 12},
                                 text_size=13,
+                                key="text_field",
                                 on_submit=on_changed,
                             )
     def build(self):  
@@ -43,7 +44,7 @@ class TextWithSlider :
             alignment = ft.MainAxisAlignment.CENTER,
             spacing=1,
             controls=[
-                ft.Container(width = 55,height=40, content=self.text),
-                ft.Container(width = 330, content=self.slider),
+                ft.Container(width = 65,height=40, content=self.text),
+                ft.Container(width = 300, content=self.slider),
             ]
             )
