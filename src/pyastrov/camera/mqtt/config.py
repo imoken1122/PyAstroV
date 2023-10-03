@@ -28,6 +28,7 @@ class CameraCmd(Enum):
     StartCapture = 6
     StopCapture = 7
     Init = 8
+    AdjustWB = 9
     NotImplemented = -1 
 
 

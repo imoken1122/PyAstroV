@@ -84,10 +84,14 @@ class MQTTCameraClient(MQTTBase):
                 self.store[camera_idx]["info"] = data
         
             case CameraCmd.GetRoi.value:
+                self.lock.acquire()
                 self.store[camera_idx]["roi"] = data
+                self.lock.release()
         
             case CameraCmd.SetRoi.value:
+                self.lock.acquire()
                 self.store[camera_idx]["roi"] = data
+                self.lock.release()
 
             case CameraCmd.GetCtrlVal.value:
                 ctrl_type = int(data["ctrl_type"])
@@ -104,6 +108,9 @@ class MQTTCameraClient(MQTTBase):
             
             case CameraCmd.StopCapture.value:
                 logger.info(f"Stop capturing camera_idx : {camera_idx}")
+                self.lock.acquire()
+                self.store[camera_idx]["frames"] = deque([],maxlen = 10)
+                self.lock.release()
 
 
             case CameraCmd.SetCtrlVal.value:
@@ -111,6 +118,8 @@ class MQTTCameraClient(MQTTBase):
                 self.store[camera_idx]["ctrlv"][ctrl_type] = int(data["value"])
 
             case CameraCmd.GetStatus.value:
+                pass
+            case CameraCmd.AdjustWB.value: 
                 pass
             case _:
                 logger.error("Invalid command")

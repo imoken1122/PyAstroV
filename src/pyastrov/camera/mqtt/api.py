@@ -7,6 +7,7 @@ from .config import CameraCmd, CameraTopics
 import asyncio
 from pyastrov.logger import setup_logger
 import threading 
+from collections import deque
 
 logger = setup_logger("mqtt-client-api")
 
@@ -17,7 +18,6 @@ class MQTTCameraAPI(CameraAPI) :
         self.is_captures = []
         self.mqttc = MQTTCameraClient() 
         self.lock = threading.Lock()
-        self.roi : ROIFormat = None
         self.info = None
 
     async def init(self):
@@ -48,7 +48,6 @@ class MQTTCameraAPI(CameraAPI) :
             logger.error(f"camera idx {idx} out of range")
             return None
         img_t = img_type.value[0]
-        self.roi = ROIFormat(startx,starty,width,height,bin,img_type)
         data = { "startx" : str(startx), "starty" : str(starty), "width" : str(width), "height" : str(height), "bin" : str(bin), "img_type" : str(img_t)}
         await self.mqttc.publish_instruction(idx, CameraCmd.SetRoi.value, data)
 
@@ -87,7 +86,11 @@ class MQTTCameraAPI(CameraAPI) :
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
-            
+        if self.is_captures[idx] == False:
+            self.lock.acquire()
+            self.mqttc.store[idx]["frames"] = deque([],maxlen = 10)
+            self.lock.release()
+        
         self.is_captures[idx] = True
 
         self.lock.acquire()
@@ -105,6 +108,12 @@ class MQTTCameraAPI(CameraAPI) :
             return None
         self.is_captures[idx] = False 
         await self.mqttc.publish_instruction(idx, CameraCmd.StopCapture.value, {})
+    async def adjust_white_balance_i(self,idx : int):
+        if self.mqttc.num_camera <= idx:
+            logger.error(f"camera idx {idx} out of range")
+            return None
+        await self.mqttc.publish_instruction(idx, CameraCmd.AdjustWB.value, {})
+        
 
 
 async def test_api():

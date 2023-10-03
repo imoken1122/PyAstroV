@@ -3,6 +3,7 @@ import ft_part
 from view_panel.base  import CameraViewPanel
 from control_panel.params import CameraControlPanel
 from control_panel.setting import CameraSettingPanel
+from control_panel.wb_rgb import CameraWBPanel
 from pyastrov.core import AstroVCore
 class ControlPanel(ft.UserControl):
     def __init__(self,core : AstroVCore,camera_view_panel : CameraViewPanel):
@@ -12,11 +13,12 @@ class ControlPanel(ft.UserControl):
         
     def build(self):
         return ft.Column(
-        height=1080,
+        height=880,
         width=500,
             scroll=ft.ScrollMode.ALWAYS,
             controls=[
                 CameraSettingPanel(self.core,self.camera_view_panel),
-                CameraControlPanel(self.core)
+                CameraControlPanel(self.core),
+                CameraWBPanel(self.core),
             ]
         )

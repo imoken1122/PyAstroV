@@ -4,7 +4,7 @@ import ft_part
 from pyastrov.core import AstroVCore
 from pyastrov.camera.interface import ImgType
 
-
+import asyncio
 class CameraSettingPanel(ft.UserControl):
     def __init__(self,core : AstroVCore ,camera_view_panel : CameraViewPanel):
         super().__init__()
@@ -24,7 +24,7 @@ class CameraSettingPanel(ft.UserControl):
         self.cur_width = roi["width"]
         self.cur_height = roi["height"]
         self.cur_bin = roi["bin"]
-        self.cur_img_type = ImgType.from_int(int(roi["img_type"]))
+        self.cur_img_type = ImgType.from_int(roi["img_type"])
 
     def build(self):
         return ft.Container(
@@ -99,6 +99,7 @@ class CameraSettingPanel(ft.UserControl):
         if e.control.selected:
             
             await self.core.camera_api.set_roi_i(idx,0,0,self.cur_width,self.cur_height,self.cur_bin,self.cur_img_type)
+            await asyncio.sleep(0.2)
             roi = self.core.camera_api.get_roi_i(idx)
             print(roi)
             await self.camera_view_panel.open(e)
