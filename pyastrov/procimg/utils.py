@@ -21,7 +21,7 @@ def buf_to_img( buf : list, width : int , height : int,img_type : ImgType = ImgT
     return img
 def get_img_for_flet( buf : list ,width : int , height : int,img_type:ImgType = ImgType.RAW8) -> str : 
     img = buf_to_img(buf, width, height)
-    _, encoded = cv2.imencode(".png", img)
+    _, encoded = cv2.imencode(".jpg", img)
     return bytes_to_base64(encoded)
 
 def save_img(  array : np.array):
@@ -47,3 +47,12 @@ def debayer( array : np.array, pattern : str = "GR"):
         return cv2.cvtColor(array, cv2.COLOR_BayerBG2BGR)
     else:
         raise Exception("Invalid Bayer Pattern")
+def cvt_color( array : np.array, color : str = "RGB"):
+    if color == "RGB":
+        return cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
+    elif color == "BGR":
+        return cv2.cvtColor(array, cv2.COLOR_RGB2BGR)
+    elif color == "GRAY":
+        return cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
+    else:
+        raise Exception("Invalid Color")

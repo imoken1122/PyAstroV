@@ -15,7 +15,7 @@ class CameraViewPanel(ft.UserControl):
         self.width = width
         self.height = height
 
-        self.init_img = open("/Users/momo/Desktop/AstroViewer/src/pyastrov/ui/view_panel/base64.txt","r",encoding="ascii" ).read()[:-1]
+        self.init_img = open("/Users/momo/Desktop/AstroViewer/pyastrov/ui/view_panel/logo_base64.txt","r",encoding="ascii" ).read()[:-1]
 
     def build(self,) :
         self.img_view= ft.Image(
@@ -36,6 +36,10 @@ class CameraViewPanel(ft.UserControl):
             if encoded_frame:
                 buf= utils.base64_to_bytes(encoded_frame)
                 self.img_view.src_base64 = utils.get_img_for_flet(buf,img_w,img_h)  
+
+                img = utils.buf_to_img(buf,img_w,img_h)
+                self.core.state_manager.set("cur_img",img)
+
                 await self.update_async()
 
             await asyncio.sleep(0.1)

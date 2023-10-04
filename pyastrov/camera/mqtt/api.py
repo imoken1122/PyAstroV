@@ -115,7 +115,6 @@ class MQTTCameraAPI(CameraAPI) :
         await self.mqttc.publish_instruction(idx, CameraCmd.AdjustWB.value, {})
         
 
-
 async def test_api():
 
     mqttc = MQTTCameraAPI()
