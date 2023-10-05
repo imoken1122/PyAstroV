@@ -52,31 +52,13 @@ class CameraControlPanel(ft.UserControl):
 
                                     ]
                                  ),
-
-                        ft.Row(
-                            [
-                                
-                                ft.Container(
-                                    height=40,
-                                    width= 100,
-                                    content = ft.FloatingActionButton(text="SnapShot",
-                                                                    on_click=self.save_clicked, 
-                                                                    bgcolor=ft.colors.AMBER_800),
-                                ),
-                                   
-                            ]
-
-                        ),
+                     
                     ]
                 )
 
         )
     
-    def save_clicked(self,e):
-        if not self.core.camera_api.is_captures[idx]: return
-        utils.save_img(self.core.camera_api.get_frame_i(idx))
-
-        print("save image")
+    
     async def slider_changed(self,e):
        
         match e.control.data : 

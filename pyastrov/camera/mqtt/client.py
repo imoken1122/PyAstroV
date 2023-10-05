@@ -39,17 +39,20 @@ class MQTTCameraClient(MQTTBase):
         return json.dumps(msg)
 
     async def init(self):
-        logger.info("MQTTCameraClient initializing...")
 
+        logger.info("MQTTCameraClient initializing...")
         # start subscribe mqtt camera server responce topic
         self.start_subscribe(CameraTopics.Responce.value)
         # run mqtt client loop
         self.loop_start()
 
         self.store = {}
+        logger.info("Waiting for camera server connection...")
         # publish init instruction, This instruction connects or reconnects the camera to the mqtt server side.
         await self.publish_instruction(-1, -1, {}, CameraTopics.Init.value)
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
+
+        
 
         self.num_camera = len(self.store.keys())
         # get camera info and roi

@@ -12,9 +12,10 @@ logger = setup_logger("stack")
 class ImageStacker:
     def __init__(self,) : 
         self.stacked_maxlen = 10
-        self.new_image_buffer = deque([], maxlen=50)
+        self.new_image_buffer = deque([], maxlen=10)
         self.stacked_buffer = Manager().list([])
         self.is_stacking = False
+        self.num_stacked = 0
         self.threashold = 0.99
     async def run_stack(self):
         base_img = self.new_image_buffer.pop()
@@ -56,7 +57,8 @@ class ImageStacker:
         new_img_shm.close()
         new_img_shm.unlink()
         return 
-    
+    def inc_num_stack(self):
+        self.num_stacked +=1
     def stack_process(self, new_img_shm, shm_event,buffer, is_stackking ): 
         shape = buffer[0].shape
         dtype = buffer[0].dtype
@@ -98,9 +100,9 @@ class ImageStacker:
                 buffer.pop()
             buffer.insert(0,avg_image)
             logger.info("Stacking success")
-            # now time filename 
+
+            self.inc_num_stack()
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            image = buffer[0]
             cv2.imwrite(f"output/{now}.jpg",buffer[0])
             return
             
@@ -163,13 +165,22 @@ class ImageStacker:
         else:
             logger.debug("Not found affine matrix")
             return None
+    def save_stacked(self,stack_i:  int, filename:str ):
+        if len(self.stacked_buffer) == 0 : 
+            logger.error("stacked buffer is empty")
+            return
+        img = self.stacked_buffer[stack_i]
+        cv2.imwrite(filename,img)
+    def is_stacking(self):
+        return self.is_stacking
+    def clear_buffer(self):
+        self.stacked_buffer[:] = []
+        self.num_stacked = 0
 
-
-
-import threading,time
-import pathlib
-import pprint
 async def test_stack():
+    import threading,time
+    import pathlib
+    import pprint
     def func(stacker):
     # read images dirctory and read images 
         p = pathlib.Path("images")

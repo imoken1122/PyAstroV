@@ -36,7 +36,10 @@ class CameraCmd(Enum):
 class MQTTBase(mqtt_client.Client,ABC):
     def __init__(self,):
         super().__init__()
-        self.connect(BROKER, PORT, 60)
+        try:
+            self.connect(BROKER, PORT, 60)
+        except Exception as e : 
+            raise Exception(f"Failed to connect to MQTT Broker : {e},  Please check your MQTT Broker is running.")
         self.wait_responces = set()
 
     async def wait(self,transaction_id:str ):
