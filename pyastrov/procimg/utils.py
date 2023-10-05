@@ -72,28 +72,48 @@ def exec_clahe(img):
     lab = cv2.merge(lab_planes) 
     bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR) 
     return bgr
-def adjust_rgb(image):
+def auto_adjust_rgb(image):
     avg_b = np.mean(image[:, :, 0])
     avg_g = np.mean(image[:, :, 1])
     avg_r = np.mean(image[:, :, 2])
 
-    # 補正係数を計算
     k_b = avg_g / avg_b
     k_r = avg_g / avg_r
 
-    # 各チャンネルに補正係数を適用
     corrected_image = np.zeros_like(image, dtype=np.float32)
     corrected_image[:, :, 0] = image[:, :, 0] * k_b
     corrected_image[:, :, 1] = image[:, :, 1]
     corrected_image[:, :, 2] = image[:, :, 2] * k_r
 
-    # ピクセル値が255を超えないようにクリップ
     corrected_image = np.clip(corrected_image, 0, 255).astype(np.uint8)
     return corrected_image
-def adjust_gamma(image,gamma=0.3):
+def ctrl_gamma(image,gamma=0.3):
 
 
     corrected_image = (image/255)**(1 / gamma) * 255
     
 
     return corrected_image
+def ctrl_saturation(image, saturation_factor):
+
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    hsv_image[:, :, 1] = np.clip(hsv_image[:, :, 1] * saturation_factor, 0, 255).astype(np.uint8)
+
+    result_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+    return result_image
+
+def ctrl_rgb(image, r, g, b):
+    corrected_image = np.zeros_like(image, dtype=np.float32)
+    corrected_image[:, :, 0] = image[:, :, 0] * b / 255
+    corrected_image[:, :, 1] = image[:, :, 1] * g / 255
+    corrected_image[:, :, 2] = image[:, :, 2] * r / 255
+
+    corrected_image = np.clip(corrected_image, 0, 255).astype(np.uint8)
+    return corrected_image
+
+def cvt_img(img : np.ndarray, params : dict) -> np.ndarray:
+    img = ctrl_gamma(img,params["gamma"]).astype(img.dtype)
+    img= ctrl_saturation(img,params["saturation"])
+    img = ctrl_rgb(img,params["r"],params["g"],params["b"])
+    return img

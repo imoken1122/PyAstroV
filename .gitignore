@@ -5,6 +5,7 @@
 U3SM*
 *fits
 /images
+/pyastro_output
 /camera_device
 *.log
 # Byte-compiled / optimized / DLL files

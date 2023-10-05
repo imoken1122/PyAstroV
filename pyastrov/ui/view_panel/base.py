@@ -10,7 +10,7 @@ class CameraViewPanel(ft.UserControl):
     def __init__(self ,core : AstroVCore, width : int  , height : int ) :
         super().__init__()
         self.core = core
-
+        self.params = {"gamma":1,"saturation":0, "r":128,"g":128,"b":128}
         self.img_view = None
         self.width = width
         self.height = height
@@ -34,13 +34,16 @@ class CameraViewPanel(ft.UserControl):
             
             encoded_frame= self.core.camera_api.get_frame_i(idx)
             if encoded_frame:
+                s = time.time()
                 buf= utils.base64_to_bytes(encoded_frame)
                 img = utils.buf_to_img(buf,img_w,img_h)
+                img = utils.cvt_img(img,self.params)
+                e = time.time()
+                print(e-s)
                 self.core.stacker.new_image_buffer.appendleft(img)
 
                 if not self.is_show_stack:
-                    self.img_view.src_base64 = utils.encode_buf_for_flet(buf,img_w,img_h)  
-
+                    self.img_view.src_base64 = utils.encode_img_for_flet(img)  
             await self.update_async()
 
             await asyncio.sleep(0.1)
@@ -51,8 +54,12 @@ class CameraViewPanel(ft.UserControl):
     async def show_stack(self):
 
         while True:
-            if not self.is_show_stack:break
+            if not self.is_show_stack:break            
             stack_img = self.core.stacker.get_latest_stacked()
+
+            stack_img = utils.cvt_img(stack_img,self.params)
+            
+            await self.update_async()
             if not stack_img is None:
                 encoded = utils.encode_img_for_flet(stack_img)
                 self.img_view.src_base64 = encoded
@@ -64,5 +71,3 @@ class CameraViewPanel(ft.UserControl):
     async def close(self,e):
         idx=0
         await self.core.camera_api.stop_capture_i(idx)
-        await self.update_async()
-

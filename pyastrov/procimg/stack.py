@@ -49,16 +49,18 @@ class ImageStacker:
                 new_img_buf[:] = self.new_image_buffer.pop()
                 buf_event.set()
                 #len new images
+                self.num_stacked = len(self.stacked_buffer)
                 logger.debug(np.array(self.stacked_buffer[0]).mean().mean())
+
 
             await asyncio.sleep(2)
 
         p.join()
         new_img_shm.close()
         new_img_shm.unlink()
-        return 
-    def inc_num_stack(self):
-        self.num_stacked +=1
+        return
+    def get_num_stack(self):
+        return self.num_stacked
     def stack_process(self, new_img_shm, shm_event,buffer, is_stackking ): 
         shape = buffer[0].shape
         dtype = buffer[0].dtype
@@ -101,7 +103,6 @@ class ImageStacker:
             buffer.insert(0,avg_image)
             logger.info("Stacking success")
 
-            self.inc_num_stack()
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
             cv2.imwrite(f"output/{now}.jpg",buffer[0])
             return
@@ -171,11 +172,16 @@ class ImageStacker:
             return
         img = self.stacked_buffer[stack_i]
         cv2.imwrite(filename,img)
+        logger.info(f"Saved stacked image to {filename}")
     def is_stacking(self):
         return self.is_stacking
     def clear_buffer(self):
+        if self.is_stacking:
+            logger.error("Cannot remove stacked image while stacking")
+            return
         self.stacked_buffer[:] = []
         self.num_stacked = 0
+        logger.info("Removed all stacked images")
 
 async def test_stack():
     import threading,time

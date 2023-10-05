@@ -31,6 +31,7 @@ class StackSettingPanel(ft.UserControl):
                 controls=[
                     ft_part.Text(
                         "Stacking", alignment=ft.alignment.bottom_left),
+        ft_part.Text( f"Num Stacked : {self.core.stacker.num_stacked}", alignment=ft.alignment.bottom_left, style=ft.TextThemeStyle.LABEL_MEDIUM),
                     ft.Row(
                         controls=[
                             ft.Container(
@@ -65,7 +66,7 @@ class StackSettingPanel(ft.UserControl):
                                     icon=ft.icons.DELETE,
                                     selected=False,
                                     on_click=self.rm_clicked,
-                                    icon_size=50,
+                                    icon_size=30,
                                     style=ft.ButtonStyle(
                                         color={"": ft.colors.RED_700}),
                                 )
@@ -75,7 +76,7 @@ class StackSettingPanel(ft.UserControl):
                                     icon=ft.icons.DOWNLOAD,
                                     selected=False,
                                     on_click=self.save_clicked,
-                                    icon_size=50,
+                                    icon_size=30,
                                     style=ft.ButtonStyle(
                                         color={"": ft.colors.WHITE70}),
                                 )
@@ -99,13 +100,9 @@ class StackSettingPanel(ft.UserControl):
         now = now.strftime("%Y%m%d_%H%M%S")
         filename = f"stack_{now}.jpg"
         self.core.stacker.save_stacked(0, str(date_dir / filename))
-        logger.info(f"Saved stacked image to {date_dir / filename}")
         await self.update_async()
 
     async def rm_clicked(self, e):
-        if self.core.stacker.is_stacking:
-            logger.error("Cannot remove stacked image while stacking")
-            return
         self.core.stacker.clear_buffer()
         await self.update_async()
         return
