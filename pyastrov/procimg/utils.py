@@ -56,3 +56,40 @@ def cvt_color( array : np.array, color : str = "RGB"):
         return cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
     else:
         raise Exception("Invalid Color")
+
+
+def exec_clahe(img):
+    ''' img must be BGR'''
+
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB) 
+    lab_planes =list( cv2.split(lab)) 
+    clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
+    lab_planes[0] = clahe.apply(lab_planes[0]) 
+    lab = cv2.merge(lab_planes) 
+    bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR) 
+    return bgr
+def adjust_rgb(image):
+    avg_b = np.mean(image[:, :, 0])
+    avg_g = np.mean(image[:, :, 1])
+    avg_r = np.mean(image[:, :, 2])
+
+    # 補正係数を計算
+    k_b = avg_g / avg_b
+    k_r = avg_g / avg_r
+
+    # 各チャンネルに補正係数を適用
+    corrected_image = np.zeros_like(image, dtype=np.float32)
+    corrected_image[:, :, 0] = image[:, :, 0] * k_b
+    corrected_image[:, :, 1] = image[:, :, 1]
+    corrected_image[:, :, 2] = image[:, :, 2] * k_r
+
+    # ピクセル値が255を超えないようにクリップ
+    corrected_image = np.clip(corrected_image, 0, 255).astype(np.uint8)
+    return corrected_image
+def adjust_gamma(image,gamma=0.3):
+
+
+    corrected_image = (image/255)**(1 / gamma) * 255
+    
+
+    return corrected_image

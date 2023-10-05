@@ -5,6 +5,7 @@ import asyncio
 from pyastrov.logger import  setup_logger
 from  pyastrov.ui import ft_part 
 import numpy as np
+from collections import deque
 from multiprocessing import Process, Manager,shared_memory
 import multiprocessing as mp
 logger = setup_logger(__name__)
@@ -13,7 +14,6 @@ class StackSettingPanel(ft.UserControl):
     def __init__(self,core : AstroVCore):
         super().__init__()
         self.core = core
-        self.cur_img = None
     def build(self):
         return ft.Container(
                 width=500,
@@ -56,23 +56,18 @@ class StackSettingPanel(ft.UserControl):
         logger.info(self.core.state_manager.get("is_show_frame"))
 
     async def stack_clicked(self,e) :
-
-        if not self.core.state_manager.contains("cur_img") or not self.core.camera_api.is_capture_i(idx): 
-            logger.error("camera is not capturing")
-            return 
-
-        e.control.selected = not e.control.selected
-        await e.control.update_async()
-
-
-        while self.core.camera_api.is_capture_i(idx) and e.control.selected:
-            img = self.core.state_manager.get("cur_img")
-            if not np.array_equal(img ,self.cur_img):
-                logger.info("stacking now...")
-                self.core.stacker.run(img)
-                self.cur_img = img
-                print(len(self.core.stacker.buffer))
-
-            await asyncio.sleep(0.5)
-
-        logger.info("stacking is done")
+        
+        if e.control.selected:
+            e.control.selected = False
+            await e.control.update_async()
+            self.core.stacker.is_stacking = False
+            logger.info("stacking is done")
+        else:
+            if len(self.core.stacker.new_image_buffer) > 0 and self.core.camera_api.is_capture_i(idx):
+                e.control.selected = True
+                await e.control.update_async()
+                await self.core.stacker.run_stack()
+            else:
+                logger.error("camera is not capturing")
+        await self.update_async()
+        return

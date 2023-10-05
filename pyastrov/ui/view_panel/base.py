@@ -38,9 +38,8 @@ class CameraViewPanel(ft.UserControl):
                 self.img_view.src_base64 = utils.get_img_for_flet(buf,img_w,img_h)  
 
                 img = utils.buf_to_img(buf,img_w,img_h)
-                self.core.state_manager.set("cur_img",img)
-
-                await self.update_async()
+                self.core.stacker.new_image_buffer.appendleft(img)
+            await self.update_async()
 
             await asyncio.sleep(0.1)
             

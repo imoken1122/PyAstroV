@@ -6,21 +6,24 @@ from pyastrov.logger import setup_logger
 from multiprocessing import Process, Manager,shared_memory
 import multiprocessing as mp
 from collections import deque
+from pyastrov.procimg import utils
+from datetime import datetime
 logger = setup_logger("stack")
 class ImageStacker:
     def __init__(self,) : 
         self.stacked_maxlen = 10
-        self.new_image_buffer = deque([], maxlen=100)
+        self.new_image_buffer = deque([], maxlen=50)
         self.stacked_buffer = Manager().list([])
         self.is_stacking = False
-        self.threashold = 0.57
-    async def run_stack(self,base_img):
+        self.threashold = 0.99
+    async def run_stack(self):
+        base_img = self.new_image_buffer.pop()
         #setting base image 
         self.add_base(base_img)
         # get base image shape and dtype
         shape = base_img.shape
         dtype = base_img.dtype
-
+    
         # define to send variable to other process
         new_img_shm = shared_memory.SharedMemory(create=True, size=np.prod(shape))
         is_stacking =mp.Value('i', 1) 
@@ -33,31 +36,37 @@ class ImageStacker:
         p = mp.Process(target=self.stack_process, args=(new_img_shm, buf_event,self.stacked_buffer,is_stacking),daemon=True)
         p.start()
         n = 0
-        while is_stacking.value==1:
+        while is_stacking.value == 1:
+
+            is_stacking.value = int(self.is_stacking)
             if len(self.new_image_buffer)>0:
+                logger.info("try stacking number %s",n)
+                logger.debug("new images : %d",len(self.new_image_buffer))
+                logger.debug("stacked image : %d ", len(self.stacked_buffer))
                 buf_event.clear()
                 new_img_buf = np.ndarray(shape, dtype=dtype, buffer=new_img_shm.buf)
                 new_img_buf[:] = self.new_image_buffer.pop()
                 buf_event.set()
-                print(np.array(self.stacked_buffer[0]).mean().mean())
-                print( len(self.stacked_buffer))
                 #len new images
-                print(len(self.new_image_buffer))
+                logger.debug(np.array(self.stacked_buffer[0]).mean().mean())
 
-             #   cv2.imwrite(f"output/{n}.jpg",self.stacked_buffer[0])
-            is_stacking.value = self.is_stacking
-            await asyncio.sleep(0.5)
-            n += 1
+            await asyncio.sleep(2)
+
+        p.join()
+        new_img_shm.close()
+        new_img_shm.unlink()
+        return 
     
     def stack_process(self, new_img_shm, shm_event,buffer, is_stackking ): 
         shape = buffer[0].shape
         dtype = buffer[0].dtype
-        while is_stackking.value == 1 : 
+        while True:
+            if is_stackking.value == 0 : return 
             shm_event.wait()
             new_img = np.ndarray(shape, dtype=dtype , buffer=new_img_shm.buf)
+
             self.stack(buffer,new_img)
             shm_event.clear()
-            print("stacked")
 
     def add_base(self,base_img: np.ndarray):
         self.stacked_buffer.append(base_img)
@@ -76,17 +85,24 @@ class ImageStacker:
         if len(buffer) == 0: 
             buffer.append(new_img)
             return
+        logger.debug("new image shape %s and buffer shape %s", new_img.shape, buffer[0].shape) 
         base_img = buffer[0]
-        logger.info(f"base image shape : {base_img.shape} new image shape : {new_img.shape}")
         try : 
             kp, des = self.get_keypoints(base_img)
+            
             align = self.get_alignment_img(new_img, kp, des)
-            logger.info(f"align image shape : {align.shape}")
-            avg_image = cv2.addWeighted(base_img, 0.7, align, 0.3, 0)
+            logger.debug("align shape %s", align.shape)
+            avg_image = cv2.addWeighted(base_img, 0.5, align, 0.5, 0)
 
             if len(buffer) >= self.stacked_maxlen:
                 buffer.pop()
             buffer.insert(0,avg_image)
+            logger.info("Stacking success")
+            # now time filename 
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            image = buffer[0]
+            cv2.imwrite(f"output/{now}.jpg",buffer[0])
+            return
             
         except Exception as e:
             logger.error(f"Faild to stack images  : {e} ")
@@ -102,7 +118,9 @@ class ImageStacker:
         if pt2 is None:
             pt2 = (img.shape[1], img.shape[0])
 
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        #img = utils.exec_clahe(img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
         mask = cv2.rectangle(np.zeros_like(gray), pt1, pt2, color=1, thickness=-1)
         akaze = cv2.AKAZE_create()
 
@@ -137,35 +155,43 @@ class ImageStacker:
         if apt1 is None or apt2 is None:
             return None
 
-        mtx = cv2.estimateAffinePartial2D(apt1, apt2)[0]
+        mtx = cv2.estimateAffinePartial2D(apt1, apt2,confidence=0.99)[0]
 
         if mtx is not None:
+            logger.debug("Found affine matrix") 
             return cv2.warpAffine(img, mtx, (width, height))
         else:
+            logger.debug("Not found affine matrix")
             return None
+
+
+
 import threading,time
 import pathlib
-
-def func(stacker):
-# read images dirctory and read images 
-    p = pathlib.Path("images")
-    for i in p.glob("*.jpg"):
-        img = cv2.imread(str(i))
-        print("add")
-        stacker.new_image_buffer.append(img)
-        for i in range(10000000):
-            pass
 import pprint
 async def test_stack():
-    import time
+    def func(stacker):
+    # read images dirctory and read images 
+        p = pathlib.Path("images")
+        for i in p.glob("*.jpg"):
+            img = cv2.imread(str(i))
+            img = utils.adjust_rgb(img)
+            img = utils.adjust_gamma(img,0.3 ).astype(img.dtype)    
+            print("add")
+            stacker.new_image_buffer.appendleft(img)
+            for i in range(100000000):
+                pass
     # generate random image
     p = pathlib.Path("images")
     pprint.pprint(list(p.glob('*.jpg')))
     l = p.glob("*.jpg")
     base_img = cv2.imread(str(next(l)))
+    base_img = utils.adjust_rgb(base_img)
+    base_img = utils.adjust_gamma(base_img,0.3 ).astype(base_img.dtype)    
     stacker = ImageStacker()
     threading.Thread(target=func, args=(stacker,)).start()
     await stacker.run_stack(base_img)
+      #  cv2.imwrite(f"output/{g}.jpg",img)
 if __name__ == "__main__":
     asyncio.run(test_stack())
  
