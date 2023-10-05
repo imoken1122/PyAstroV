@@ -109,10 +109,10 @@ class ImageStacker:
             return
 
     def get_latest_stacked(self):
-        if len(self.buffer) ==0 : 
+        if len(self.stacked_buffer) ==0 : 
             logger.error("buffer is empty")
-            return []
-        return self.buffer[0]
+            return None
+        return self.stacked_buffer[0]
   
     def get_keypoints(self,img, pt1=(0, 0), pt2=None):
         if pt2 is None:

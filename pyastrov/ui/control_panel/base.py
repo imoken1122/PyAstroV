@@ -19,7 +19,7 @@ class ControlPanel(ft.UserControl):
             scroll=ft.ScrollMode.ALWAYS,
             controls=[
                 CameraSettingPanel(self.core,self.camera_view_panel),
-                StackSettingPanel(self.core),
+                StackSettingPanel(self.core,self.camera_view_panel),
                 CameraControlPanel(self.core),
                 CameraWBPanel(self.core),
             ]

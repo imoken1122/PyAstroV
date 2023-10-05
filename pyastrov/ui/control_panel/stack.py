@@ -11,9 +11,10 @@ import multiprocessing as mp
 logger = setup_logger(__name__)
 idx = 0
 class StackSettingPanel(ft.UserControl):
-    def __init__(self,core : AstroVCore):
+    def __init__(self,core : AstroVCore,camera_view_panel : ft.UserControl):
         super().__init__()
         self.core = core
+        self.camera_view_panel = camera_view_panel
     def build(self):
         return ft.Container(
                 width=500,
@@ -36,12 +37,12 @@ class StackSettingPanel(ft.UserControl):
                                   ) ,
                        ft.Container(
                                         content= ft.IconButton(
-                                            icon= ft.icons.COLLECTIONS,
-                                            selected_icon=ft.icons.IMAGE,
+                                            icon= ft.icons.IMAGE,
+                                            selected_icon=ft.icons.COLLECTIONS,
                                             selected=False,
                                             on_click=self.show_frame_clicked,
                                             icon_size= 50,
-                                            style=ft.ButtonStyle(color={"selected": ft.colors.AMBER_800, "": ft.colors.GREEN}),
+                                            style=ft.ButtonStyle(color={"selected": ft.colors.AMBER_700,"": ft.colors.WHITE70 }),
                                             )
                                   ) ,
 
@@ -50,10 +51,12 @@ class StackSettingPanel(ft.UserControl):
         )
     
     async def show_frame_clicked(self,e):
-        self.core.state_manager.set("is_show_frame",e.control.selected)
+
         e.control.selected = not e.control.selected
+        self.camera_view_panel.is_show_stack = e.control.selected
         await e.control.update_async()
-        logger.info(self.core.state_manager.get("is_show_frame"))
+        await self.camera_view_panel.show_stack()
+        await self.update_async()
 
     async def stack_clicked(self,e) :
         

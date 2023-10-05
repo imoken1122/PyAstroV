@@ -19,8 +19,12 @@ def buf_to_img( buf : list, width : int , height : int,img_type : ImgType = ImgT
     arr = to_ndarray(buf,img_type).reshape(height,width)
     img = debayer(arr)
     return img
-def get_img_for_flet( buf : list ,width : int , height : int,img_type:ImgType = ImgType.RAW8) -> str : 
+def encode_buf_for_flet( buf : list ,width : int , height : int,img_type:ImgType = ImgType.RAW8) -> str : 
     img = buf_to_img(buf, width, height)
+    _, encoded = cv2.imencode(".jpg", img)
+    return bytes_to_base64(encoded)
+
+def encode_img_for_flet( img : np.array) -> str:
     _, encoded = cv2.imencode(".jpg", img)
     return bytes_to_base64(encoded)
 
