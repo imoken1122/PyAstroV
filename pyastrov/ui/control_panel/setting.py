@@ -102,8 +102,8 @@ class CameraSettingPanel(ft.UserControl):
             await asyncio.sleep(0.2)
             roi = self.core.camera_api.get_roi_i(idx)
             print(roi)
+            #await self.camera_view_panel.open(e)
             await self.camera_view_panel.open(e)
-
         else:
             await self.camera_view_panel.close(e)
         await self.update_async() 

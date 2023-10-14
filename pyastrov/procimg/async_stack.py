@@ -1,5 +1,4 @@
 import cv2
-from numba import jit
 from collections import deque
 import numpy as np  
 import asyncio
@@ -13,128 +12,65 @@ logger = setup_logger("stack")
 class ImageStacker:
     def __init__(self,) : 
         self.stacked_maxlen = 10
-        self.new_image_buffer = deque([], maxlen=5)
-        self.stacked_buffer = Manager().list([])
+        self.stacked_buffer =deque([], maxlen=10)
         self.is_stacking = False
         self.num_stacked = 0
         self.threashold = 0.99
-    def start_stack(self):
-        self.is_stacking = True
-        
-    async def run_stack(self):
-        if len(self.stacked_buffer) == 0:
-            base_img = self.new_image_buffer[0]
-        else : 
-            base_img = self.stacked_buffer[0]
 
-        #setting base image 
-        self.add_base(base_img)
-        # get base image shape and dtype
-        shape = base_img.shape
-        dtype = base_img.dtype
-    
-        # define to send variable to other process
-        new_img_shm = shared_memory.SharedMemory(create=True, size=np.prod(shape))
-        is_stacking =mp.Value('i', 1) 
-        buf_event = mp.Event() 
-        stack_event = mp.Event() 
-        buf_event.clear()
-
-        # start stack process
-        p = mp.Process(target=self.stack_process, args=(new_img_shm, buf_event,stack_event,self.stacked_buffer,is_stacking),daemon=True)
-        p.start()
-        pre_num =  0
-        while True:
-            is_stacking.value = int(self.is_stacking)
-            if is_stacking.value == 0 : 
-                p.terminate()
-                break
-            #pre_numと現在のスタック数がおなじならスタックしない
-         
-            if len(self.new_image_buffer)>0:
-                logger.info("try stacking number %s",self.num_stacked+1)
-                logger.debug("new images : %d",len(self.new_image_buffer))
-                logger.debug("stacked image : %d ", len(self.stacked_buffer))
-                buf_event.clear()
-                new_img_buf = np.ndarray(shape, dtype=dtype, buffer=new_img_shm.buf)
-                new_img_buf[:] = self.new_image_buffer.pop()
-                buf_event.set()
-                #len new images
-                self.num_stacked = len(self.stacked_buffer)
-                logger.debug(np.array(self.stacked_buffer[0]).mean().mean())
-
-                stack_event.wait()
-                stack_event.clear()
-
-                # 
-            await asyncio.sleep(1)
-
-        p.join()
-        new_img_shm.close()
-        new_img_shm.unlink()
-        return
-    def is_stackking(self):
-        return self.is_stacking
+     
     def get_num_stack(self):
         return len(self.stacked_buffer)
-    def stack_process(self, new_img_shm, shm_event,stack_event,buffer, is_stackking): 
-        shape = buffer[0].shape
-        dtype = buffer[0].dtype
-        while True:
-            if is_stackking.value == 0 : break
-            shm_event.wait()
-            new_img = np.ndarray(shape, dtype=dtype , buffer=new_img_shm.buf)
-            shm_event.clear()
-
-            stack_event.clear()
-            self.stack(buffer,new_img)
-            stack_event.set()
-
-
-
+  
+    def is_stackking(self):
+        return self.is_stacking
     def add_base(self,base_img: np.ndarray):
         self.stacked_buffer.append(base_img)
 
-    def stack(self, buffer,new_img: np.ndarray):
-        if len(buffer) > 0 and new_img.dtype != buffer[0].dtype:
-            logger.error("dtype is not the same %s != %s", new_img.dtype, buffer[0][0].dtype)
-            return 
-        if len(buffer) > 0 and new_img.shape != buffer[0].shape:
-            logger.error("shape is not the same %s != %s", new_img.shape, buffer[0][0].shape)
-            return
-
+    async def run_stack(self,new_img: np.ndarray):
         if len(new_img.shape) == 4:
             new_img = new_img[:,:,:3]
 
-        if len(buffer) == 0: 
-            buffer.append(new_img)
+        if self.get_num_stack() == 0:
+            self.stacked_buffer.append(new_img)
+            logger.info("Set base image")
             return
-        logger.debug("new image shape %s and buffer shape %s", new_img.shape, buffer[0].shape) 
-        base_img = buffer[0]
+
+        if len(self.stacked_buffer) > 0 and new_img.dtype != self.stacked_buffer[0].dtype:
+            logger.error("dtype is not the same %s != %s", new_img.dtype, self.stacked_buffer[0].dtype)
+            return 
+        if len(self.stacked_buffer) > 0 and new_img.shape != self.stacked_buffer[0].shape:
+            logger.error("shape is not the same %s != %s", new_img.shape, self.stacked_buffer[0].shape)
+            return
+
+        logger.debug("new image shape %s and buffer shape %s", new_img.shape, self.stacked_buffer[0].shape) 
+        base_img = self.stacked_buffer[0]
+
         try : 
             kp, des = self.get_keypoints(base_img)
-            
+            await asyncio.sleep(0.1)
             align = self.get_alignment_img(new_img, kp, des)
+            await asyncio.sleep(0.1)
+
             logger.debug("align shape %s", align.shape)
             avg_image = cv2.addWeighted(base_img, 0.5, align, 0.5, 0)
 
-            if len(buffer) >= self.stacked_maxlen:
-                buffer.pop()
-            buffer.insert(0,avg_image)
+            self.stacked_buffer.appendleft(avg_image)
             logger.info("Stacking success")
 
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            #cv2.imwrite(f"output/{now}.jpg",buffer[0])
+            cv2.imwrite(f"output/{now}.jpg",self.stacked_buffer[0])
+            return 
             
         except Exception as e:
             logger.error(f"Faild to stack images  : {e} ")
-
+            return
 
     def get_latest_stacked(self):
         if len(self.stacked_buffer) ==0 : 
             logger.error("buffer is empty")
             return None
         return self.stacked_buffer[0]
+  
     def get_keypoints(self,img, pt1=(0, 0), pt2=None):
         if pt2 is None:
             pt2 = (img.shape[1], img.shape[0])
@@ -146,6 +82,7 @@ class ImageStacker:
         akaze = cv2.AKAZE_create()
 
         return akaze.detectAndCompute(gray, mask=mask)
+
     def get_matcher(self,img, kp2, des2):
         kp1, des1 = self.get_keypoints(img)
 
@@ -159,7 +96,7 @@ class ImageStacker:
         good = [m for m, n in matches if m.distance < self.threashold * n.distance]
 
         if len(good) == 0:
-            #logger.error("good is empty")
+            logger.error("good is empty")
             return None,None
 
         target_position = [[kp1[m.queryIdx].pt[0], kp1[m.queryIdx].pt[1]] for m in good]
@@ -168,6 +105,7 @@ class ImageStacker:
         apt1 = np.array(target_position)
         apt2 = np.array(base_position)
         return apt1, apt2
+
     def get_alignment_img(self,img, kp2, des2):
         height, width = img.shape[:2]
         apt1, apt2 = self.get_matcher(img, kp2, des2)
@@ -200,3 +138,5 @@ class ImageStacker:
         logger.info("Removed all stacked images")
     def stop_stack(self):
         self.is_stacking = False
+    def start_stack(self):
+        self.is_stacking = True 

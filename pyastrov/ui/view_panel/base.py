@@ -30,17 +30,21 @@ class CameraViewPanel(ft.UserControl):
         idx= 0
         await self.core.camera_api.start_capture_i(idx)
         img_w,img_h = self.core.camera_api.get_roi_i(idx)["width"],self.core.camera_api.get_roi_i(idx)["height"]
+
         while self.core.camera_api.is_capture_i(idx):
             
             encoded_frame= self.core.camera_api.get_frame_i(idx)
             if encoded_frame:
-                s = time.time()
                 buf= utils.base64_to_bytes(encoded_frame)
                 img = utils.buf_to_img(buf,img_w,img_h)
                 img = utils.cvt_img(img,self.params)
-                e = time.time()
-                print(e-s)
+                img = utils.auto_adjust_rgb(img)
+
                 self.core.stacker.new_image_buffer.appendleft(img)
+                #if self.core.stacker.is_stackking():
+                    #stack_t = asyncio.create_task(self.core.stacker.run_stack(img))
+                    #await stack_t
+                #    await self.core.stacker.run_stack(img)
 
                 if not self.is_show_stack:
                     self.img_view.src_base64 = utils.encode_img_for_flet(img)  
@@ -54,12 +58,11 @@ class CameraViewPanel(ft.UserControl):
     async def show_stack(self):
 
         while True:
-            if not self.is_show_stack:break            
+            if not self.is_show_stack :break            
             stack_img = self.core.stacker.get_latest_stacked()
 
-            stack_img = utils.cvt_img(stack_img,self.params)
+            #stack_img = utils.cvt_img(stack_img,self.params)
             
-            await self.update_async()
             if not stack_img is None:
                 encoded = utils.encode_img_for_flet(stack_img)
                 self.img_view.src_base64 = encoded
@@ -71,3 +74,10 @@ class CameraViewPanel(ft.UserControl):
     async def close(self,e):
         idx=0
         await self.core.camera_api.stop_capture_i(idx)
+
+
+    def cvt_src_img(self, cvt_func, *args):
+        encoded = self.img_view.src_base64
+        img = utils.decode_img_from_flet(encoded)
+        img = cvt_func(img,*args)
+        self.img_view.src_base64 =  utils.encode_img_for_flet(img)

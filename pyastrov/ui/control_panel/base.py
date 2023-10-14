@@ -22,7 +22,7 @@ class ControlPanel(ft.UserControl):
                 CameraSettingPanel(self.core,self.camera_view_panel),
                 CameraControlPanel(self.core),
                 StackSettingPanel(self.core,self.camera_view_panel),
-                CameraWBPanel(self.core, self.camera_view_panel),
                 ImgCtrlPanel(self.core,self.camera_view_panel),
+                CameraWBPanel(self.core, self.camera_view_panel),
             ]
         )

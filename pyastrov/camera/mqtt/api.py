@@ -80,18 +80,19 @@ class MQTTCameraAPI(CameraAPI) :
             logger.error(f"camera idx {idx} out of range")
             return None
         self.is_captures[idx] = True
+
+        # clear frame buffer
+        self.lock.acquire()
+        self.mqttc.store[idx]["frames"] = deque([],maxlen = 10)
+        self.lock.release()
+        
         await self.mqttc.publish_instruction(idx, CameraCmd.StartCapture.value, {})
 
     def get_frame_i(self,idx : int):
         if self.mqttc.num_camera <= idx:
             logger.error(f"camera idx {idx} out of range")
             return None
-        if self.is_captures[idx] == False:
-            self.lock.acquire()
-            self.mqttc.store[idx]["frames"] = deque([],maxlen = 10)
-            self.lock.release()
         
-        self.is_captures[idx] = True
 
         self.lock.acquire()
         try:

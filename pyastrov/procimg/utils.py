@@ -28,6 +28,11 @@ def encode_img_for_flet( img : np.array) -> str:
     _, encoded = cv2.imencode(".jpg", img)
     return bytes_to_base64(encoded)
 
+def decode_img_from_flet( encoded : str,img_type: ImgType = ImgType.RAW8) -> np.array:
+    buf = base64_to_bytes(encoded)
+    arr = np.frombuffer(buf,dtype=ImgType.to_np_dtype(img_type))
+    img = cv2.imdecode(arr,cv2.IMREAD_UNCHANGED)
+    return img
 def save_img(  array : np.array):
     ''' input image array must be BGR '''
 
@@ -115,5 +120,5 @@ def ctrl_rgb(image, r, g, b):
 def cvt_img(img : np.ndarray, params : dict) -> np.ndarray:
     img = ctrl_gamma(img,params["gamma"]).astype(img.dtype)
     img= ctrl_saturation(img,params["saturation"])
-    img = ctrl_rgb(img,params["r"],params["g"],params["b"])
+  #  img = ctrl_rgb(img,params["r"],params["g"],params["b"])
     return img

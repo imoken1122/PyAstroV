@@ -20,6 +20,7 @@ class StackSettingPanel(ft.UserControl):
         self.core = core
         self.camera_view_panel = camera_view_panel
 
+        self.num_stack_txt = ft_part.StateText( f"Num Stacked : {self.core.stacker.num_stacked}", alignment=ft.alignment.bottom_left, style=ft.TextThemeStyle.LABEL_LARGE)
     def build(self):
         return ft.Container(
             width=500,
@@ -31,7 +32,7 @@ class StackSettingPanel(ft.UserControl):
                 controls=[
                     ft_part.Text(
                         "Stacking", alignment=ft.alignment.bottom_left),
-        ft_part.Text( f"Num Stacked : {self.core.stacker.num_stacked}", alignment=ft.alignment.bottom_left, style=ft.TextThemeStyle.LABEL_MEDIUM),
+                    self.num_stack_txt,
                     ft.Row(
                         controls=[
                             ft.Container(
@@ -104,30 +105,42 @@ class StackSettingPanel(ft.UserControl):
 
     async def rm_clicked(self, e):
         self.core.stacker.clear_buffer()
-        await self.update_async()
+        await self.num_stack_txt.set_text(f"Num Stacked : {self.core.stacker.num_stacked}")
         return
 
     async def show_frame_clicked(self, e):
-
+        if self.core.stacker.num_stacked == 0:
+            logger.error("stacked buffer is empty")
+            return
         e.control.selected = not e.control.selected
         self.camera_view_panel.is_show_stack = e.control.selected
         await e.control.update_async()
-        await self.camera_view_panel.show_stack()
+
+        t = asyncio.create_task(self.camera_view_panel.show_stack())
+        await t
         await self.update_async()
 
     async def stack_clicked(self, e):
 
-        if e.control.selected:
-            e.control.selected = False
-            await e.control.update_async()
-            self.core.stacker.is_stacking = False
+        e.control.selected = not e.control.selected
+        await e.control.update_async()
+
+        if not e.control.selected:
+            self.core.stacker.stop_stack()
             logger.info("stacking is done")
         else:
-            if len(self.core.stacker.new_image_buffer) > 0 and self.core.camera_api.is_capture_i(idx):
-                e.control.selected = True
-                await e.control.update_async()
-                await self.core.stacker.run_stack()
+            if self.core.camera_api.is_capture_i(idx) and len(self.core.stacker.new_image_buffer) > 0:
+
+                self.core.stacker.start_stack()
+                t1 = asyncio.create_task( self.core.stacker.run_stack())
+                t2 = asyncio.create_task(self.update_num_stack_txt())
+                await t1,t2
             else:
                 logger.error("camera is not capturing")
         await self.update_async()
         return
+    
+    async def update_num_stack_txt(self,):
+        while self.core.stacker.is_stacking:
+            await self.num_stack_txt.set_text(f"Num Stacked : {self.core.stacker.num_stacked}")
+            await asyncio.sleep(1)

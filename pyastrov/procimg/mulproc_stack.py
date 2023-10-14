@@ -36,12 +36,12 @@ class ImageStacker:
         # define to send variable to other process
         new_img_shm = shared_memory.SharedMemory(create=True, size=np.prod(shape))
         is_stacking =mp.Value('i', 1) 
+        is_ok=mp.Value('i', 1) 
         buf_event = mp.Event() 
-        stack_event = mp.Event() 
         buf_event.clear()
 
         # start stack process
-        p = mp.Process(target=self.stack_process, args=(new_img_shm, buf_event,stack_event,self.stacked_buffer,is_stacking),daemon=True)
+        p = mp.Process(target=self.stack_process, args=(new_img_shm, buf_event,self.stacked_buffer,is_stacking,is_ok),daemon=True)
         p.start()
         pre_num =  0
         while True:
@@ -50,8 +50,13 @@ class ImageStacker:
                 p.terminate()
                 break
             #pre_numと現在のスタック数がおなじならスタックしない
-         
+            if is_ok.value == 0 :
+                logger.debug(f"pre_num {pre_num} == num_stack {self.get_num_stack()}")
+                logger.debug(f"Wating stackking process ")
+                await asyncio.sleep(5)
+                continue
             if len(self.new_image_buffer)>0:
+                is_ok.value = 0
                 logger.info("try stacking number %s",self.num_stacked+1)
                 logger.debug("new images : %d",len(self.new_image_buffer))
                 logger.debug("stacked image : %d ", len(self.stacked_buffer))
@@ -63,10 +68,9 @@ class ImageStacker:
                 self.num_stacked = len(self.stacked_buffer)
                 logger.debug(np.array(self.stacked_buffer[0]).mean().mean())
 
-                stack_event.wait()
-                stack_event.clear()
 
                 # 
+            print(is_ok.value)
             await asyncio.sleep(1)
 
         p.join()
@@ -77,7 +81,7 @@ class ImageStacker:
         return self.is_stacking
     def get_num_stack(self):
         return len(self.stacked_buffer)
-    def stack_process(self, new_img_shm, shm_event,stack_event,buffer, is_stackking): 
+    def stack_process(self, new_img_shm, shm_event,buffer, is_stackking,is_ok ): 
         shape = buffer[0].shape
         dtype = buffer[0].dtype
         while True:
@@ -86,9 +90,8 @@ class ImageStacker:
             new_img = np.ndarray(shape, dtype=dtype , buffer=new_img_shm.buf)
             shm_event.clear()
 
-            stack_event.clear()
             self.stack(buffer,new_img)
-            stack_event.set()
+            is_ok.value = 1
 
 
 
@@ -124,7 +127,7 @@ class ImageStacker:
             logger.info("Stacking success")
 
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            #cv2.imwrite(f"output/{now}.jpg",buffer[0])
+            cv2.imwrite(f"output/{now}.jpg",buffer[0])
             
         except Exception as e:
             logger.error(f"Faild to stack images  : {e} ")
@@ -200,3 +203,38 @@ class ImageStacker:
         logger.info("Removed all stacked images")
     def stop_stack(self):
         self.is_stacking = False
+
+async def test_stack():
+    import threading,time
+    import pathlib
+    import pprint
+    def func(stacker):
+    # read images dirctory and read images 
+        p = pathlib.Path("images")
+        for i in p.glob("*.jpg"):
+            img = cv2.imread(str(i))
+            img = utils.adjust_rgb(img)
+            img = utils.adjust_gamma(img,0.3 ).astype(img.dtype)    
+            print("add")
+            stacker.new_image_buffer.appendleft(img)
+            for i in range(100000000):
+                pass
+    # generate random image
+    p = pathlib.Path("images")
+    pprint.pprint(list(p.glob('*.jpg')))
+    l = p.glob("*.jpg")
+    base_img = cv2.imread(str(next(l)))
+    base_img = utils.adjust_rgb(base_img)
+    base_img = utils.adjust_gamma(base_img,0.3 ).astype(base_img.dtype)    
+    stacker = ImageStacker()
+    threading.Thread(target=func, args=(stacker,)).start()
+    await stacker.run_stack(base_img)
+      #  cv2.imwrite(f"output/{g}.jpg",img)
+if __name__ == "__main__":
+    asyncio.run(test_stack())
+ 
+
+
+
+        
+

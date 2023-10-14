@@ -87,7 +87,7 @@ class App(ft.UserControl):
 
 from pyastrov.camera.mqtt.api import MQTTCameraAPI
 
-async  def main(page: ft.Page):
+async def main(page: ft.Page):
 
     page.window_max_width=WINDOW_WIDTH
     page.window_max_height=WINDOW_HEIHG

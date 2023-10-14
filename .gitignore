@@ -7,6 +7,7 @@ U3SM*
 /images
 /pyastrov_output
 /camera_device
+.DS_Store
 *.log
 *.log*
 # Byte-compiled / optimized / DLL files

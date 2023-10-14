@@ -2,7 +2,7 @@
 from abc import *
 from dataclasses import dataclass
 from enum import Enum
-
+import numpy as np
 class ImgType(Enum):
     RAW8 =0,
     RAW16 =1,
@@ -14,7 +14,12 @@ class ImgType(Enum):
             case 1: return ImgType.RAW16
             case 2: return ImgType.RGB24
             case _: return None
-
+    def to_np_dtype(self):
+        match self:
+            case ImgType.RAW8: return np.uint8
+            case ImgType.RAW16: return np.uint16
+            case ImgType.RGB24: return np.uint8
+            case _: return None
         
 class ControlType(Enum):
     GAIN = 0

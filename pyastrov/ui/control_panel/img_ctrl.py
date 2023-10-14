@@ -48,6 +48,7 @@ class ImgCtrlPanel(ft.UserControl):
             case ControlType.SATURATION:
                 self.satulate_slider.text.value= value
 
+
         await self.update_async()
 
     
@@ -56,7 +57,9 @@ class ImgCtrlPanel(ft.UserControl):
         match e.control.data:
             case ControlType.GAMMA:
                 self.camera_view_panel.params["gamma"] = value * 0.1
+                self.camera_view_panel.cvt_src_img(utils.ctrl_gamma,value * 0.1)
             case ControlType.SATURATION:
                 self.camera_view_panel.params["saturation"] = value
+                self.camera_view_panel.cvt_src_img(utils.ctrl_saturation,value )
 
         await self.update_async()
