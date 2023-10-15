@@ -119,15 +119,15 @@ class ImageStacker:
             
             align = self.get_alignment_img(new_img, kp, des)
             logger.debug("align shape %s", align.shape)
-            avg_image = cv2.addWeighted(base_img, 0.5, align, 0.5, 0)
+            avg_image = cv2.addWeighted(base_img, 0.7, align, 0.3, 0)
 
             if len(buffer) >= self.stacked_maxlen:
                 buffer.pop()
             buffer.insert(0,avg_image)
             logger.info("Stacking success")
 
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            cv2.imwrite(f"output/{now}.jpg",buffer[0])
+            #now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            #cv2.imwrite(f"output/{now}.jpg",buffer[0])
             
         except Exception as e:
             logger.error(f"Faild to stack images  : {e} ")
@@ -204,7 +204,7 @@ class ImageStacker:
     def stop_stack(self):
         self.is_stacking = False
 
-async def test_stack():
+async def test_mulproc_stack():
     import threading,time
     import pathlib
     import pprint
@@ -213,8 +213,8 @@ async def test_stack():
         p = pathlib.Path("images")
         for i in p.glob("*.jpg"):
             img = cv2.imread(str(i))
-            img = utils.adjust_rgb(img)
-            img = utils.adjust_gamma(img,0.3 ).astype(img.dtype)    
+            img = utils.auto_adjust_rgb(img)
+            img = utils.ctrl_gamma(img,0.3 ).astype(img.dtype)    
             print("add")
             stacker.new_image_buffer.appendleft(img)
             for i in range(100000000):
@@ -224,14 +224,47 @@ async def test_stack():
     pprint.pprint(list(p.glob('*.jpg')))
     l = p.glob("*.jpg")
     base_img = cv2.imread(str(next(l)))
-    base_img = utils.adjust_rgb(base_img)
-    base_img = utils.adjust_gamma(base_img,0.3 ).astype(base_img.dtype)    
+    base_img = utils.auto_adjust_rgb(base_img)
+    base_img = utils.ctrl_gamma(base_img,0.3 ).astype(base_img.dtype)    
     stacker = ImageStacker()
+    stacker.new_image_buffer.appendleft(base_img)
     threading.Thread(target=func, args=(stacker,)).start()
-    await stacker.run_stack(base_img)
-      #  cv2.imwrite(f"output/{g}.jpg",img)
+    await stacker.run_stack()
+    g = datetime.now().strftime("%Y%m%d_%H%M%S")
+    cv2.imwrite(f"output/{g}.jpg",base_img)
+
+
+def test_stack():
+
+    import pathlib
+    import pprint
+
+    p = pathlib.Path("images")
+    pprint.pprint(list(p.glob('*.jpg')))
+    l = p.glob("*.jpg")
+    base_img = cv2.imread(str(next(l)))
+    base_img = utils.auto_adjust_rgb(base_img)
+    base_img = utils.ctrl_gamma(base_img,0.3 ).astype(base_img.dtype)    
+    stacker = ImageStacker()
+    stacker.new_image_buffer.appendleft(base_img)
+
+    p = pathlib.Path("images")
+    for idx,i in enumerate(p.glob("*.jpg")):
+        if idx == 0 : continue
+        img = cv2.imread(str(i))
+        img = utils.auto_adjust_rgb(img)
+        img = utils.ctrl_gamma(img,0.3 ).astype(img.dtype)    
+        stacker.stack(stacker.stacked_buffer,img)
+        g = datetime.now().strftime("%Y%m%d_%H%M%S")
+        result = stacker.stacked_buffer[0]
+        cv2.imwrite(f"output/{g}.jpg",result)
+    
+
+    
+
 if __name__ == "__main__":
-    asyncio.run(test_stack())
+    #asyncio.run(test_stack())
+    test_stack()
  
 
 
